@@ -1,5 +1,5 @@
 import { superValidate } from "sveltekit-superforms/server";
-import { formSchema } from "../forms/schema";
+import { formSchema } from "../../forms/schema";
 import type { Actions, ServerLoad } from "@sveltejs/kit";
 import { fail, redirect } from "@sveltejs/kit";
 

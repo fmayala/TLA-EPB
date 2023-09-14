@@ -1,5 +1,5 @@
 <script lang="ts">
-	import logo from '$lib/assets/epb.svg';
+	import logo from '$lib/assets/epb-2.svg';
 	import type { Page } from '@sveltejs/kit';
 	import LoginForm from '../forms/login-form.svelte';
 	export let data: Page;
@@ -11,7 +11,7 @@
 			<img src={logo} alt="EPB logo" />
 		</div>
 		<div class="self-center ml-4">
-			<h1 class="text-white text-lg">Transformer Loading Analysis</h1>
+			<h1 class="text-lg">Transformer Loading Analysis</h1>
 		</div>
 	</div>
     <div class="w-96 mx-auto mt-20">

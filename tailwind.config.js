@@ -14,6 +14,9 @@ const config = {
 		},
 		extend: {
 			colors: {
+				epb: '#2C6EBF',
+				epbhover: '#255898',
+				inputborder: '#8C8C8C',
 				border: "hsl(var(--border))",
 				input: "hsl(var(--input))",
 				ring: "hsl(var(--ring))",

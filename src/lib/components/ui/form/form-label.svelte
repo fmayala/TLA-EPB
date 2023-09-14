@@ -14,7 +14,7 @@
 
 <Label
 	for={ids.input}
-	class={cn($errors && "text-destructive", className)}
+	class={cn($errors, className)}
 	{...$$restProps}
 >
 	<slot />
