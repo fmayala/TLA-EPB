@@ -1,11 +1,25 @@
 import { superValidate } from "sveltekit-superforms/server";
 import { formSchema } from "../forms/schema";
 import type { Actions, ServerLoad } from "@sveltejs/kit";
-import { fail, redirect } from "@sveltejs/kit";
+import { fail } from "@sveltejs/kit";
+// import db from "$lib/server/db";
+// import { env } from '$env/dynamic/private';
 
-export const load: ServerLoad = () => {
+export const load: ServerLoad = async () => {
+  // const response = await db.xfmrMaxMeasures.findMany({
+  // });
+
+  // console.log(response);
+
+  // // Turn response into json list of measures
+  // const measures = response.map((measure) => measure.KVA_MEASURE);
+
   return {
-    form: superValidate(formSchema)
+    form: superValidate(formSchema),
+    feed: {
+      // Turn response into json list of measures
+      test: "",
+    }
   };
 };
 
@@ -17,13 +31,9 @@ export const actions: Actions = {
         form
       });
     }
-
-    if (form.valid) {
-      throw redirect(300, "/dashboard");
-    }
     
     return {
-      form
+      form,
     };
   }
 };

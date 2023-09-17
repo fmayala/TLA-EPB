@@ -1,0 +1,33 @@
+version: '3.9'
+
+services:
+  postgres:
+    image: postgres:14-alpine
+    ports:
+      - 5432:5432
+    volumes:
+      - ~/apps/postgres:/var/lib/postgresql/data
+      - ./docker-entrypoint-initdb.d/init.sql:/docker-entrypoint-initdb.d/init.sql
+    environment:
+      - POSTGRES_PASSWORD=epbPass
+      - POSTGRES_USER=epb
+      - POSTGRES_DB=xfmrdb
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U epb -d xfmrdb"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  app:
+    build: 
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - 3000:3000
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      - DATABASE_URL=postgresql://epb:epbPass@postgres:5432/xfmrdb
+      # FORMAT
+      # POSTGRESQL://<USER>:<PASSWORD>@<HOST>:<PORT>/<DATABASE>

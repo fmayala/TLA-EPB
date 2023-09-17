@@ -1,0 +1,56 @@
+generator client {
+  provider      = "prisma-client-js"
+  binaryTargets = ["native", "linux-musl-openssl-3.0.x"]
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model XfmrDimension {
+  XFMR_SID             BigInt   @id @unique
+  EFFECTIVE_START_DATE DateTime
+  EFFECTIVE_END_DATE   DateTime?
+  UPDATE_DATE          DateTime
+  CURRENT_INDICATOR    String   @db.VarChar(2)
+  GIS_BANK_INDICATOR   BigInt
+  GIS_IDENTIFIER       BigInt
+  XFMR_NUMBER          String   @db.VarChar(50)
+  KVA_RATING           String   @db.VarChar(50)
+  PHASE                String   @db.VarChar(50)
+  
+  // Relations
+  MaxMeasures          XfmrMaxMeasures[]
+  Measures             XfmrMeasure[]
+  
+  @@index([GIS_IDENTIFIER])
+}
+
+model XfmrMaxMeasures {
+  XFMR_SID    BigInt  @id
+  KVA_RATING  String  @db.VarChar(50)
+  KVA_MEASURE Float?
+
+  // Relations
+  Dimension   XfmrDimension @relation(fields: [XFMR_SID], references: [XFMR_SID])
+  
+  @@index([KVA_RATING])
+}
+
+model XfmrMeasure {
+  MEASURE_DATE         DateTime
+  UTC_TIME             DateTime
+  XFMR_SID             BigInt @id
+  SINGLE_PHASE         Int?
+  POLY_PHASE           Int?
+  SINGLE_PHASE_IN_LOAD Int?
+  POLY_PHASE_IN_LOAD   Int?
+  KW_MEASURE           Float?
+  KVA_MEASURE          Float?
+  
+  // Relations
+  Dimension   XfmrDimension @relation(fields: [XFMR_SID], references: [XFMR_SID])
+  
+  @@index([MEASURE_DATE, UTC_TIME])
+}
