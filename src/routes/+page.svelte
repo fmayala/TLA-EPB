@@ -4,14 +4,15 @@
 	import Input from '$lib/components/ui/input/input.svelte';
 	import * as Tabs from '$lib/components/ui/tabs';
 	import TransformerSearch from '../forms/transformer-search.svelte';
+	import Chart from '../charts/histogram.svelte';
     
 	/** @type {import('./$types').PageData} */
     export let data;
 </script>
 
-<div class="flex h-screen">
+<div class="main-container">
 	<!-- Left Column -->
-	<div class="w-1/2 custom-scroll px-10 py-5">
+	<div class="left-column custom-scroll">
 		<!-- <p>{data.feed}</p> -->
 		<div class="flex flex-row">
 			<img src="/EPB-2.svg" alt="EPB" />
@@ -49,13 +50,13 @@
 	</div>
 
 	<!-- Right Column -->
-	<div class="w-1/2 bg-gray-300 custom-scroll px-10 py-5">
+	<div class="right-column custom-scroll bg-gray-300">
 		<div class="p-4">
-			<h1 class="text-xl font-bold">Right Column</h1>
-			<!-- Your content here -->
-			{#each Array(100) as _, i}
-				<p>Right Content {i + 1}</p>
-			{/each}
+			<h1 class="text-2xl font-bold">Generated ID goes here</h1>
+			<h1 class="mt-10 text-xl font-semibold">Risk Report (placeholder)</h1>
+			<Chart />
+			<h1 class="mt-10 text-xl font-semibold">Histogram (placeholder)</h1>
+			<Chart />
 		</div>
 	</div>
 </div>
@@ -89,23 +90,22 @@
 	}
 
 	/* Default layout */
-    /* .container {
+    .main-container {
         display: flex;
-        flex-direction: row;
     }
     .left-column, .right-column {
         width: 50%;
         padding: 10px;
-    } */
+    } 
 
     /* Mobile layout */
-    /* @media (max-width: 768px) {
+    @media (max-width: 768px) {
         .left-column, .right-column {
             width: 100%;
             padding: 5px;
         }
-        .container {
+        .main-container {
             flex-direction: column;
         }
-    } */
+    }
 </style>

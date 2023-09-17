@@ -1,4 +1,3 @@
-//currently translating functions over, bare bone. No visual markups yet.
 <script lang="ts">
     import { onMount } from "svelte";
     let data = [];
