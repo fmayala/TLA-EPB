@@ -1,11 +1,12 @@
 <!-- App.svelte -->
 <script>
-	import Button from '$lib/components/ui/button/button.svelte';
-	import Input from '$lib/components/ui/input/input.svelte';
 	import * as Tabs from '$lib/components/ui/tabs';
+	import TransformerGenerate from '../forms/transformer-generate.svelte';
 	import TransformerSearch from '../forms/transformer-search.svelte';
 	import Chart from '../charts/histogram.svelte';
-    
+	import DriverDialog from '../dialogs/dialog-driver-profile.svelte';
+	import TableProfiles from '../tables/table-profiles.svelte';
+
 	/** @type {import('./$types').PageData} */
     export let data;
 </script>
@@ -13,7 +14,6 @@
 <div class="main-container">
 	<!-- Left Column -->
 	<div class="left-column custom-scroll">
-		<!-- <p>{data.feed}</p> -->
 		<div class="flex flex-row">
 			<img src="/EPB-2.svg" alt="EPB" />
 			<div class="self-center ml-4">
@@ -33,19 +33,20 @@
 						class="justify-normal items-start p-0 text-base">Profiles</Tabs.Trigger
 					>
 				</Tabs.List>
+				<!-- Main generation content -->
 				<Tabs.Content value="search">
-					<div class="flex flex-row mt-5">
-						<Input placeholder="Enter Transformer ID (XFMR SID)" />
-						<Button href="" class="ml-5 bg-epb hover:bg-epbhover">Search</Button>
-					</div>
-                    <TransformerSearch form={data.form} />
+					<TransformerSearch form={data.search} />
+                    <TransformerGenerate form={data.generate} />
 				</Tabs.Content>
-				<Tabs.Content value="profiles">Change your password here.</Tabs.Content>
+				<!-- Profiles content -->
+				<Tabs.Content value="profiles">
+					<div class="flex flex-row mt-10">
+						<h1 class="ml-1 self-center text-xl font-semibold mr-auto">Driver Profiles</h1>
+						<DriverDialog form={data.profiles}/>
+					</div>
+					<TableProfiles/>
+				</Tabs.Content>
 			</Tabs.Root>
-			<!-- Your content here -->
-			<!-- {#each Array(100) as _, i}
-				<p>Left Content {i + 1}</p>
-			{/each} -->
 		</div>
 	</div>
 

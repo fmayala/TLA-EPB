@@ -16,5 +16,5 @@
 	{...$$restProps}
 >
 	<slot />
-	<input hidden {name} value={$value} />
+	<input hidden {name} value={$value} class="border-inputborder" />
 </Select.Root>

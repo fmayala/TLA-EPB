@@ -208,6 +208,18 @@
   resolved "https://registry.yarnpkg.com/@humanwhocodes/object-schema/-/object-schema-1.2.1.tgz#b520529ec21d8e5945a1851dfd1c32e94e39ff45"
   integrity sha512-ZnQMnLV4e7hDlUvw8H+U8ASL02SS2Gn6+9Ac3wGGLIe7+je2AeAOxPY+izIPJDfFDb7eDjev0Us8MO1iFRN8hA==
 
+"@iconify/svelte@^3.1.4":
+  version "3.1.4"
+  resolved "https://registry.yarnpkg.com/@iconify/svelte/-/svelte-3.1.4.tgz#728fa18ea03da8541a64565c1b2b0c2b8dc0d417"
+  integrity sha512-YDwQlN46ka8KPRayDb7TivmkAPizfTXi6BSRNqa1IV0+byA907n8JcgQafA7FD//pW5XCuuAhVx6uRbKTo+CfA==
+  dependencies:
+    "@iconify/types" "^2.0.0"
+
+"@iconify/types@^2.0.0":
+  version "2.0.0"
+  resolved "https://registry.yarnpkg.com/@iconify/types/-/types-2.0.0.tgz#ab0e9ea681d6c8a1214f30cd741fe3a20cc57f57"
+  integrity sha512-+wluvCrRhXrhyOmRDJ3q8mux9JkKy5SJ/v8ol2tu4FVjyYvtEzkc/3pK15ET6RKg4b4w4BmTk1+gsCUhf21Ykg==
+
 "@jest/schemas@^29.6.3":
   version "29.6.3"
   resolved "https://registry.yarnpkg.com/@jest/schemas/-/schemas-29.6.3.tgz#430b5ce8a4e0044a7e3819663305a7b3091c8e03"
@@ -2629,10 +2641,24 @@ svelte-check@^3.4.3:
     postcss "^8.4.28"
     postcss-scss "^4.0.7"
 
+svelte-headless-table@^0.17.5:
+  version "0.17.5"
+  resolved "https://registry.yarnpkg.com/svelte-headless-table/-/svelte-headless-table-0.17.5.tgz#fbbdd6dca2e78ffb1175017989402351600337ad"
+  integrity sha512-euomCYluojyFKZ53StEghOKScwsmWhgNH6PX0b/ofriDfBpWC1ksEGKAfDSHiKdyQcikRWm2ITwd0BOZ3459Cw==
+  dependencies:
+    svelte-keyed "^1.1.6"
+    svelte-render "^1.6.1"
+    svelte-subscribe "^1.0.5"
+
 svelte-hmr@^0.15.3:
   version "0.15.3"
   resolved "https://registry.yarnpkg.com/svelte-hmr/-/svelte-hmr-0.15.3.tgz#df54ccde9be3f091bf5f18fc4ef7b8eb6405fbe6"
   integrity sha512-41snaPswvSf8TJUhlkoJBekRrABDXDMdpNpT2tfHIv4JuhgvHqLMhEPGtaQn0BmbNSTkuz2Ed20DF2eHw0SmBQ==
+
+svelte-keyed@^1.1.6:
+  version "1.1.7"
+  resolved "https://registry.yarnpkg.com/svelte-keyed/-/svelte-keyed-1.1.7.tgz#333041befb644c188c684b1b1a252800854cdeb1"
+  integrity sha512-d3VIwBza12PIQ0mXf8js+r4xoSFiQikDobbi6hx03oQzZx0BImXCBcdsZeYEN7VrNswXcjIrhc9qqjlxcro49w==
 
 svelte-parse-markup@^0.1.1:
   version "0.1.2"
@@ -2657,6 +2683,18 @@ svelte-preprocess@^5.0.4:
     magic-string "^0.27.0"
     sorcery "^0.11.0"
     strip-indent "^3.0.0"
+
+svelte-render@^1.6.1:
+  version "1.6.1"
+  resolved "https://registry.yarnpkg.com/svelte-render/-/svelte-render-1.6.1.tgz#ad741e1b02a1d8d85ee6edd351a7a321e2996e7e"
+  integrity sha512-pn580Z6DtxIDrXqQaGR/7z8tdHasgURn1AG5tt4ym1PfE6qFjT27NpN6vIg5kvDl1ewK9pYeTfIWPw4pPXqyuw==
+  dependencies:
+    svelte-subscribe "^1.0.5"
+
+svelte-subscribe@^1.0.5:
+  version "1.0.6"
+  resolved "https://registry.yarnpkg.com/svelte-subscribe/-/svelte-subscribe-1.0.6.tgz#824b8e9e56f0c7e90025d5877ecbd7230d8f4ed0"
+  integrity sha512-legaLPjOGAN3G6xUa8+1ms3qo3lE4nfypZe1CedyOEoUUwWPfmzJHuBXtwdro4xUf4kezUbzjtyK1UOeZDksog==
 
 svelte@^4.0.5:
   version "4.2.0"

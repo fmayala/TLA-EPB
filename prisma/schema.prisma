@@ -9,48 +9,57 @@ datasource db {
 }
 
 model XfmrDimension {
-  XFMR_SID             BigInt   @id @unique
-  EFFECTIVE_START_DATE DateTime
-  EFFECTIVE_END_DATE   DateTime?
-  UPDATE_DATE          DateTime
-  CURRENT_INDICATOR    String   @db.VarChar(2)
-  GIS_BANK_INDICATOR   BigInt
-  GIS_IDENTIFIER       BigInt
-  XFMR_NUMBER          String   @db.VarChar(50)
-  KVA_RATING           String   @db.VarChar(50)
-  PHASE                String   @db.VarChar(50)
-  
-  // Relations
-  MaxMeasures          XfmrMaxMeasures[]
-  Measures             XfmrMeasure[]
-  
-  @@index([GIS_IDENTIFIER])
+  XFMR_SID             BigInt    @id @unique
+  EFFECTIVE_START_DATE DateTime  @map("EFFECTIVE_START_DATE") @db.Timestamp(3)
+  EFFECTIVE_END_DATE   DateTime? @map("EFFECTIVE_END_DATE") @db.Timestamp(3)
+  UPDATE_DATE          DateTime  @map("UPDATE_DATE") @db.Timestamp(3)
+  CURRENT_INDICATOR    String    @map("CURRENT_INDICATOR") @db.VarChar(2)
+  GIS_BANK_INDICATOR   BigInt    @map("GIS_BANK_INDICATOR")
+  GIS_IDENTIFIER       BigInt    @map("GIS_IDENTIFIER")
+  XFMR_NUMBER          String    @map("XFMR_NUMBER") @db.VarChar(50)
+  KVA_RATING           String    @map("KVA_RATING") @db.VarChar(50)
+  PHASE                String    @map("PHASE") @db.VarChar(50)
+
+  MaxMeasures XfmrMaxMeasures[]
+  Measures    XfmrMeasure[]
+
+  @@index([GIS_IDENTIFIER], name: "XfmrDimension_GIS_IDENTIFIER_idx")
+  @@map("XfmrDimension")
 }
 
 model XfmrMaxMeasures {
-  XFMR_SID    BigInt  @id
-  KVA_RATING  String  @db.VarChar(50)
-  KVA_MEASURE Float?
+  XFMR_SID    BigInt @id @map("XFMR_SID")
+  KVA_RATING  String @map("KVA_RATING") @db.VarChar(50)
+  KVA_MEASURE Float? @map("KVA_MEASURE")
 
-  // Relations
-  Dimension   XfmrDimension @relation(fields: [XFMR_SID], references: [XFMR_SID])
-  
-  @@index([KVA_RATING])
+  Dimension XfmrDimension @relation(fields: [XFMR_SID], references: [XFMR_SID])
+
+  @@index([KVA_RATING], name: "XfmrMaxMeasures_KVA_RATING_idx")
+  @@map("XfmrMaxMeasures")
 }
 
 model XfmrMeasure {
-  MEASURE_DATE         DateTime
-  UTC_TIME             DateTime
-  XFMR_SID             BigInt @id
-  SINGLE_PHASE         Int?
-  POLY_PHASE           Int?
-  SINGLE_PHASE_IN_LOAD Int?
-  POLY_PHASE_IN_LOAD   Int?
-  KW_MEASURE           Float?
-  KVA_MEASURE          Float?
-  
-  // Relations
-  Dimension   XfmrDimension @relation(fields: [XFMR_SID], references: [XFMR_SID])
-  
-  @@index([MEASURE_DATE, UTC_TIME])
+  MEASURE_DATE         DateTime @id @map("MEASURE_DATE") @db.Timestamp(3)
+  UTC_TIME             DateTime @map("UTC_TIME") @db.Timestamp(3)
+  XFMR_SID             BigInt   @map("XFMR_SID")
+  SINGLE_PHASE         Int?     @map("SINGLE_PHASE")
+  POLY_PHASE           Int?     @map("POLY_PHASE")
+  SINGLE_PHASE_IN_LOAD Int?     @map("SINGLE_PHASE_IN_LOAD")
+  POLY_PHASE_IN_LOAD   Int?     @map("POLY_PHASE_IN_LOAD")
+  KW_MEASURE           Float?   @map("KW_MEASURE")
+  KVA_MEASURE          Float?   @map("KVA_MEASURE")
+
+  Dimension XfmrDimension @relation(fields: [XFMR_SID], references: [XFMR_SID])
+
+  @@index([MEASURE_DATE, UTC_TIME], name: "XfmrMeasure_MEASURE_DATE_UTC_TIME_idx")
+  @@map("XfmrMeasure")
+}
+
+model XfmrDriverProfile {
+  ID              Int    @id @default(autoincrement()) @map("ID")
+  NAME            String @map("NAME") @db.VarChar(50) 
+  MILES_DRIVEN    Int    @map("MILES_DRIVEN")
+  KVA_EXPENDITURE Float  @map("KVA_EXPENDITURE")
+
+  @@map("XfmrDriverProfile")
 }
