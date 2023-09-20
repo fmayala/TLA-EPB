@@ -1,20 +1,22 @@
-<script>
+<script lang="ts">
     import { onMount } from 'svelte';
     import { DataFrame } from 'pandas-js'; // Assuming you are using pandas-js
     import DBConnect from './DatabaseConnection'; // Assuming correct import
     import { writeFile } from 'fs/promises'; // Import the file system module for writing files
+    import { Chart } from 'chart.js';
+
   
-  let df = null; // DataFrame | null
-  let EVdf = null; // DataFrame | null
-  let XFMR_SID = null; // string | null
-  let KVA_RATING = null; // number | null
-  let EV_count = null; // number | null
-  let overloaded_time = null; // Date | null
-  let EVoverloaded_time = null; // Date | null
-  let output = '-------------------------------------\n'; // string
-  let EV_output = '-------------------------------------\n'; // string
-  let threshold = null; // number | null
-  let scenario = null; // string | null
+  let df: DataFrame | null = null;
+  let EVdf: DataFrame | null = null;
+  let XFMR_SID: string | null = null;
+  let KVA_RATING: number | null = null;
+  let EV_count: number | null = null;
+  let overloaded_time: Date | null = null;
+  let EVoverloaded_time: Date | null = null;
+  let output: string = '-------------------------------------\n';
+  let EV_output: string = '-------------------------------------\n';
+  let threshold: number | null = null;
+  let scenario: string | null = null;
   
     async function createDataFrame() {
   try {
@@ -38,18 +40,23 @@ function getEvOutput() {
     return EV_output;
 }
 
+interface DataFrameRow {
+  MEASURE_DATE: string;
+  UTC_TIME: string;
+  // other fields
+}
+
 function sortDataFrame() {
-    if (df === null) {
-      output += 'DataFrame is null.\n';
-      return;
-    }
+  if (df === null) {
+    output += 'DataFrame is null.\n';
+    return;
+  }
 
-    df = df.sort((a, b) => {
-      const dateA = new Date(a.MEASURE_DATE);
-      const dateB = new Date(b.MEASURE_DATE);
-      if (dateA < dateB) return -1;
-      if (dateA > dateB) return 1;
-
+  df = df.sort((a: DataFrameRow, b: DataFrameRow) => {
+    const dateA = new Date(a.MEASURE_DATE);
+    const dateB = new Date(b.MEASURE_DATE);
+    if (dateA < dateB) return -1;
+    if (dateA > dateB) return 1;
       const timeA = a.UTC_TIME;
       const timeB = b.UTC_TIME;
       if (timeA < timeB) return -1;
@@ -57,35 +64,45 @@ function sortDataFrame() {
       return 0;
     });
 }
+interface DataFrameRow {
+  LOAD_PERCENT?: number;
+  KVA_MEASURE: number;
+  
+  // other fields 
+}
 
 function changeToPercent() {
-    // Adds LOAD_PERCENT column to DataFrame by converting KVA_MEASURE column to percentage based on KVA_RATING
-    df.forEach(row => {
-        row.LOAD_PERCENT = (row.KVA_MEASURE / parseFloat(KVA_RATING)) * 100;
-    });
+  if (df === null || KVA_RATING === null) {
+    output += 'DataFrame or KVA_RATING is null.\n';
+    return;
+  }
+
+  const kvaRating = KVA_RATING; // KVA_RATING is not null here
+
+  df.forEach((row: DataFrameRow) => {
+    row.LOAD_PERCENT = (row.KVA_MEASURE / parseFloat(kvaRating.toString())) * 100;
+  });
 }
-async function saveCSV(filename, dataFrame) {
-    try {
-        const csvData = dataFrame.toCSV(); 
-        await writeFile(filename, csvData);
-    }  catch (error) {
+
+async function saveCSV(filename: string, dataFrame: DataFrame) {
+  try {
+    const csvData = dataFrame.toCSV(); // Assuming toCSV() is a method on your DataFrame
+    await writeFile(filename, csvData);
+  } catch (error) {
     output += `Error saving CSV: ${error}\n`;
-    }
+  }
 }
 
 async function createCSV() {
-    try {
-        // Creates a CSV file based on DataFrame
-        if (parseFloat(EV_count) > 0) {
-           
-            await saveCSV(`XFMR ${XFMR_SID} - ${EV_count} EV's - ${EV_scenario}.csv`, EVdf);
-        } else {
-            
-            await saveCSV(`XFMR ${XFMR_SID}.csv`, df);
-        }
-    } catch (error) {
-        console.error('Error creating .CSV file. This could be due to your package location or permissions. Please attempt to run the program as an administrator.');
+  try {
+    if (EV_count !== null && parseFloat(EV_count.toString()) > 0) {
+      await saveCSV(`XFMR ${XFMR_SID} - ${EV_count} EV's - ${scenario}.csv`, EVdf);
+    } else {
+      await saveCSV(`XFMR ${XFMR_SID}.csv`, df);
     }
+  } catch (error) {
+    console.error('Error creating .CSV file. This could be due to your package location or permissions. Please attempt to run the program as an administrator.');
+  }
 }
 
 async function getKVA_Rating() {
@@ -102,11 +119,11 @@ async function getKVA_Rating() {
 }
 
 function plotDataFrame() {
-    if (parseFloat(EV_count) === 0) {
+
+    if (EV_count !== null && parseFloat(EV_count) === 0) {
         // Plots DataFrame and changes labels to better match data
         const xValues = df.map(row => row.MEASURE_DATE);
         const yValues = df.map(row => row.KVA_MEASURE);
-
         const chart = new Chart({
             target: document.getElementById('chart'), 
             data: {
@@ -153,7 +170,8 @@ function plotDataFrame() {
                 },
             }
         });
-    } else {
+    } 
+    else {
         // Plot EV and Normal Usage
         df.forEach(row => {
             row.MEASURE_DATE = new Date(row.MEASURE_DATE);
@@ -215,6 +233,7 @@ function plotDataFrame() {
             }
         });
     }
+    
 }
 function printDataFrame() {
     console.log(df);
