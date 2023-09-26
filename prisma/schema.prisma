@@ -9,11 +9,11 @@ datasource db {
 }
 
 model XfmrDimension {
-  XFMR_SID             BigInt    @id @unique
+  XFMR_SID             BigInt    @id @unique 
   EFFECTIVE_START_DATE DateTime  @map("EFFECTIVE_START_DATE") @db.Timestamp(3)
   EFFECTIVE_END_DATE   DateTime? @map("EFFECTIVE_END_DATE") @db.Timestamp(3)
   UPDATE_DATE          DateTime  @map("UPDATE_DATE") @db.Timestamp(3)
-  CURRENT_INDICATOR    String    @map("CURRENT_INDICATOR") @db.VarChar(2)
+  CURRENT_INDICATOR    String    @map("CURRENT_INDICATOR") @db.VarChar(10)
   GIS_BANK_INDICATOR   BigInt    @map("GIS_BANK_INDICATOR")
   GIS_IDENTIFIER       BigInt    @map("GIS_IDENTIFIER")
   XFMR_NUMBER          String    @map("XFMR_NUMBER") @db.VarChar(50)
@@ -39,9 +39,10 @@ model XfmrMaxMeasures {
 }
 
 model XfmrMeasure {
-  MEASURE_DATE         DateTime @id @map("MEASURE_DATE") @db.Timestamp(3)
-  UTC_TIME             DateTime @map("UTC_TIME") @db.Timestamp(3)
-  XFMR_SID             BigInt   @map("XFMR_SID")
+  ID                   Int      @id @default(autoincrement()) @map("ID")
+  MEASURE_DATE         DateTime @map("MEASURE_DATE") @db.Timestamp(3) 
+  UTC_TIME             DateTime @map("UTC_TIME") @db.Timestamp(3) 
+  XFMR_SID             BigInt   @map("XFMR_SID") 
   SINGLE_PHASE         Int?     @map("SINGLE_PHASE")
   POLY_PHASE           Int?     @map("POLY_PHASE")
   SINGLE_PHASE_IN_LOAD Int?     @map("SINGLE_PHASE_IN_LOAD")
@@ -52,6 +53,7 @@ model XfmrMeasure {
   Dimension XfmrDimension @relation(fields: [XFMR_SID], references: [XFMR_SID])
 
   @@index([MEASURE_DATE, UTC_TIME], name: "XfmrMeasure_MEASURE_DATE_UTC_TIME_idx")
+  @@index([XFMR_SID], name: "XfmrMeasure_XFMR_SID_idx")
   @@map("XfmrMeasure")
 }
 

@@ -216,6 +216,7 @@ function plotDataFrame() {
         });
     }
 }
+
 function printDataFrame() {
     console.log(df);
 }
@@ -302,7 +303,12 @@ function getAvailableKWH() {
     const belowCapacity = df.filter(row => row.KVA_MEASURE < KVA_RATING)
                             .map(row => row.KVA_MEASURE);
     
-    const availableKWH = belowCapacity.map(value => (KVA_RATING - value) * 0.25);
+    // LIST OF KVA_MEASURES UNDER THE KVA_RATING
+
+    // Get list of results for each hour that is below capacity
+    // Calculate the amount of kwh available
+    // Difference between the measure taken and rating 
+    const availableKWH = belowCapacity.map((kva_measure) => (KVA_RATING - kva_measure) * 0.25);
     const totalKWH = availableKWH.reduce((a, b) => a + b, 0);
 
     output += 'Total available KWH: ' + totalKWH.toFixed(3) + '\n';
