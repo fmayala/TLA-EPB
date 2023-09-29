@@ -11,5 +11,7 @@ export type GeneratedData = {
     total_available_kwh: number;
     xfmr_sid: number;
     measures: [];
+    driver_measures: [];
     max: number;
+    real_threshold: number;
 }

@@ -1,11 +1,14 @@
 import db from '$lib/server/db';
 import type { GenerateResponse, GeneratedData } from '$lib/server/response';
 import {
+	ev_usage_measures,
 	get_upgrade_threshold,
 	overloaded_kwh,
 	overloaded_time,
 	total_available_kwh,
-	total_kwh_above_threshold
+	total_kwh_above_threshold,
+	type DriverProfile,
+	TimeInterval
 } from '$lib/server/risk';
 import type { Actions } from './$types';
 
@@ -13,9 +16,12 @@ import type { Actions } from './$types';
 export async function load({ url }) {
 	const sid = url.searchParams.get('sid');
 
+	console.log(sid);
+
 	if (sid === null || sid === undefined || sid === '' || sid.match(/^[0-9]+$/) === null) {
 		return {
-			showGenerated: false
+			showGenerated: false,
+			sid: null
 		};
 	}
 
@@ -28,19 +34,22 @@ export async function load({ url }) {
 
 		if (res === null) {
 			return {
-				showGenerated: false
+				showGenerated: false,
+				sid: null
 			};
 		}
 
 		return {
-			showGenerated: true
+			showGenerated: true,
+			sid: parseInt(sid)
 		};
 	} catch (e) {
 		console.log(e);
 	}
 
 	return {
-		showGenerated: false
+		showGenerated: false,
+		sid: 0
 	};
 }
 
@@ -49,28 +58,56 @@ export const actions: Actions = {
 		const formData = Object.fromEntries(await request.formData());
 
 		const profile = Number(formData.selectedProfile);
-		const sid = Number(formData.sid);
+		const sid = Number(formData.t_sid);
 		const evs = Number(formData.evs);
 		const percentage = Number(formData.threshold_percentage);
-
-		// console.log(formData)
-
+		const interval = Number(formData.interval);
 		const errors = [];
 
-		if (profile === undefined || profile === null || isNaN(profile)) {
-			errors.push('Please select a profile');
+		console.log(formData.t_sid);
+		console.log(Number(formData.t_sid));
+
+		if (profile === undefined || profile === null || isNaN(profile) || profile === 0) {
+			errors.push({
+				field: 'selectedProfile',
+				message: 'Please select a valid driver profile.'
+			});
 		}
 
-		if (sid === undefined || sid === null || isNaN(sid)) {
-			errors.push('Please enter a valid SID');
+		if (formData.interval === undefined || formData.interval === null || formData.interval === '') {
+			errors.push({
+				field: 'interval',
+				message: 'Please select a valid interval.'
+			});
 		}
 
-		if (evs === undefined || evs === null || isNaN(evs)) {
-			errors.push('Please enter a valid number of electric vehicles');
+		if (sid === undefined || sid === null || isNaN(sid) || sid === 0) {
+			errors.push({
+				field: 'sid',
+				message: 'Please enter a valid transformer SID.'
+			});
+		}
+
+		if (formData.evs === undefined || formData.evs === null || isNaN(evs)) {
+			errors.push({
+				field: 'evs',
+				message: 'Please enter a valid number of EVs.'
+			});
 		}
 
 		if (percentage === undefined || percentage === null || isNaN(percentage)) {
-			errors.push('Please enter a valid threshold percentage');
+			errors.push({
+				field: 'threshold_percentage',
+				message: 'Please enter a valid threshold percentage.'
+			});
+		}
+
+		if (errors.length > 0) {
+			return {
+				message: 'Invalid field data.',
+				data: null,
+				errors: errors
+			};
 		}
 
 		const kvaRes = await db.xfmrDimension.findUnique({
@@ -102,56 +139,33 @@ export const actions: Actions = {
 			]
 		});
 
+		const driver_profile = await db.xfmrDriverProfile.findUnique({
+			where: {
+				ID: profile
+			}
+		});
+
 		const newMeasures = measures.map((measure) => {
-			console.log(measure);
+			// console.log(measure);
 			return [new Date(measure.UTC_TIME).getTime(), measure.KVA_MEASURE];
 		});
 
-		// const dailyData = {};
-
-		// newMeasures.forEach((measure) => {
-		// 	const date = measure.measure_date;
-		// 	console.log(date);
-			
-		// 	if (!dailyData[date]) {
-		// 		dailyData[date] = { sum: 0, count: 0 };
-		// 	}
-			
-		// 	// Add the KVA_MEASURE to the daily total and increment the count
-		// 	dailyData[date].sum += measure.kva_measure;
-		// 	dailyData[date].count++;
-		// 	dailyData[date].date = date;
-		// });
-		
-		// // Calculate the average KVA_MEASURE for each day and prepare the data for the chart
-		// const chartData = Object.entries(dailyData).map(([da, { sum, count, date }]) => {
-		// 	// Convert the date string to a Date object
-		// 	const [day, month, year] = da.split('-').map(Number);
-
-		// 	let newDate = new Date(date);
-
-		// 	// console.log(date.split('-'))
-		// 	// Convert the date to a timestamp in milliseconds
-		// 	const timestamp = new Date(year, month - 1, day).getTime();
-
-		// 	// console.log(timestamp)
-			
-		// 	return [newDate.getTime(), sum / count]
-		// });
-
-		// console.log(kvaRating);
+		//console.log(sid);
+		// console.log(newMeasures[0]);
 
 		return {
 			message: 'Success',
 			data: {
-				total_kwh_above_threshold: total_kwh_above_threshold(measures, kvaRating, percentage),
-				total_overloaded_hours: overloaded_time(measures, kvaRating),
-				total_overloaded_kwh: overloaded_kwh(measures, kvaRating),
+				total_kwh_above_threshold: await total_kwh_above_threshold(measures, kvaRating, percentage),
+				total_overloaded_hours: await overloaded_time(measures, kvaRating),
+				total_overloaded_kwh: await overloaded_kwh(measures, kvaRating),
 				upgrade_threshold: get_upgrade_threshold(kvaRating),
-				total_available_kwh: total_available_kwh(measures, kvaRating),
+				total_available_kwh: await total_available_kwh(measures, kvaRating),
 				xfmr_sid: sid,
 				measures: newMeasures,
-				max: kvaRating
+				driver_measures: await ev_usage_measures(measures, evs, driver_profile as DriverProfile, interval as TimeInterval),
+				max: kvaRating,
+				real_threshold: kvaRating * (percentage / 100),
 			} as GeneratedData
 		} as GenerateResponse;
 	}

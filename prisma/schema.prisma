@@ -61,7 +61,7 @@ model XfmrDriverProfile {
   ID              Int    @id @default(autoincrement()) @map("ID")
   NAME            String @map("NAME") @db.VarChar(50) 
   MILES_DRIVEN    Int    @map("MILES_DRIVEN")
-  KVA_EXPENDITURE Float  @map("KVA_EXPENDITURE")
+  KWH_EXPENDITURE Float  @map("KWH_EXPENDITURE")
 
   @@map("XfmrDriverProfile")
 }

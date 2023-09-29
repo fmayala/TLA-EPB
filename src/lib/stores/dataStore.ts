@@ -16,3 +16,4 @@ const dataStore: Writable<GenerateResponse> = writable({
 } as GenerateResponse); // initialize with null or some default value
 
 export default dataStore;
+

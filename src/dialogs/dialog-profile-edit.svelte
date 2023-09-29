@@ -156,7 +156,7 @@
 					}}
 				/>
 				<p class="text-sm text-muted-foreground mt-2">
-					EV kWh Expenditure is the amount of electricity used by the vehicle per mile.
+					EV kWh Expenditure is the amount of kilowatts an hour used by the vehicle per mile. See <a class="text-epb" target="_blank" href="https://ecocostsavings.com/electric-car-kwh-per-mile-list/">here</a> for common values.
 				</p>
 				{#if $formErrors.expenditure}
 					<p class="text-sm text-muted-foreground text-red-500">{$formErrors.expenditure}</p>

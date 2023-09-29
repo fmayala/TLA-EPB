@@ -16,6 +16,9 @@ const config = {
 			colors: {
 				epb: '#2C6EBF',
 				epbhover: '#255898',
+				epbsecond: "#f9f9f9",
+				epbthird: "#2d2d2d",
+				epbgreen: "#8AD74A",
 				inputborder: '#8C8C8C',
 				border: "hsl(var(--border))",
 				input: "hsl(var(--input))",
