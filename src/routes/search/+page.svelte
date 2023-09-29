@@ -21,6 +21,10 @@
 	})
 </script>
 
+<head>
+	<title>Transformer Search</title>
+</head>
+
 <!-- <TransformerSearch form={data.search} /> -->
 <div class="pt-6">
 	<h1 class="text-xl font-medium">Transformer Search</h1>
@@ -30,6 +34,7 @@
 				class="flex h-10 w-full rounded-md border border-input border-inputborder bg-transparent px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:border-epb disabled:cursor-not-allowed disabled:opacity-50"
 				placeholder="Enter Transformer ID (XFMR SID)"
 				name="sid"
+				type="number"
 			/>
 			<Button class="ml-5 bg-epb hover:bg-epbhover">Search</Button>
 		</div>
@@ -84,6 +89,7 @@
 						max={10}
 						min={1}
 						name="evs"
+						type="number"
 						class="flex h-10 w-full rounded-md border border-input border-inputborder bg-transparent px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:border-epb disabled:cursor-not-allowed disabled:opacity-50"
 					/>
 					{#if errors.map((e) => e.field).includes('evs')}
@@ -101,6 +107,7 @@
 						value={0}
 						max={10}
 						min={0}
+						type="number"
 						name="threshold_percentage"
 						class="flex h-10 w-full rounded-md border border-input border-inputborder bg-transparent px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:border-epb disabled:cursor-not-allowed disabled:opacity-50"
 					/>

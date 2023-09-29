@@ -46,6 +46,10 @@
 	$: hasPreviousPage = index > 1;
 </script>
 
+<head>
+	<title>Profiles</title>
+</head>
+
 <div class="pt-6">
 	<div class="flex flex-row mb-12">
 		<h1 class="ml-1 self-center text-xl font-semibold mr-auto">Driver Profiles</h1>
