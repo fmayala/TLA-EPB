@@ -45,8 +45,8 @@
 		const res = await fetch(`/profiles?page=${page}&limit=${limit}`);
 		const data = await res.json();
 
-		console.log(data);
-		console.log(data.profiles);
+		//console.log(data);
+		//console.log(data.profiles);
 
 		if (data && data.profiles.length > 0) {
 			profiles.update((p) => [...p, ...data.profiles]);
@@ -147,7 +147,7 @@
 					on:click={() => {
 						selectedProfile = profile;
 						toggleDropdown();
-						console.log(profile);
+						// console.log(profile);
 					}}
 				>
 					{profile.NAME}

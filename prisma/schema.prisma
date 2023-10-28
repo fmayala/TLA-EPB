@@ -59,9 +59,10 @@ model XfmrMeasure {
 
 model XfmrDriverProfile {
   ID              Int    @id @default(autoincrement()) @map("ID")
-  NAME            String @map("NAME") @db.VarChar(50) 
+  NAME            String @map("NAME") @db.VarChar(20) 
   MILES_DRIVEN    Int    @map("MILES_DRIVEN")
-  KWH_EXPENDITURE Float  @map("KWH_EXPENDITURE")
+  KWH_EXPENDITURE Float  @map("KWH_EXPENDITURE") @default(0)
+  TIME_INTERVAL   Int @map("TIME_INTERVAL") @default(0)
 
   @@map("XfmrDriverProfile")
 }

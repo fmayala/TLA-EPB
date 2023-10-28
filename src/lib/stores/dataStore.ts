@@ -1,7 +1,7 @@
 import type { GeneratedData, GenerateResponse } from '$lib/server/response';
 import { writable, type Writable } from 'svelte/store';
 
-const dataStore: Writable<GenerateResponse> = writable({
+const dataStore: Writable<any> = writable({
     message: '',
     data: {
         total_kwh_above_threshold: 0,

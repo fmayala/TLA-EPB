@@ -46,11 +46,12 @@ export const actions: Actions = {
 		const name = formData.name as string;
 		const milesdriven = Number(formData.milesdriven);
 		const expenditure = Number(formData.expenditure);
+		const interval = Number(formData.interval);
 
 		const errors = [];
 
-		if (name.length < 2 || name.length > 50) {
-			errors.push('Name must be between 2 and 50 characters');
+		if (name.length < 2 || name.length > 20) {
+			errors.push('Name must be between 2 and 20 characters');
 		}
 
 		if (milesdriven < 5 || milesdriven > 75) {
@@ -59,6 +60,10 @@ export const actions: Actions = {
 
 		if (expenditure < 0) {
 			errors.push('Expenditure cannot be negative');
+		}
+
+		if (interval < 0 || interval > 3) {
+			errors.push('Interval must be between 0 and 3');
 		}
 
 		if (errors.length > 0) {
@@ -80,7 +85,8 @@ export const actions: Actions = {
 				data: {
 					NAME: `${formData.name}`,
 					MILES_DRIVEN: Number(`${formData.milesdriven}`),
-					KVA_EXPENDITURE: Number(`${formData.expenditure}`)
+					KWH_EXPENDITURE: Number(`${formData.expenditure}`),
+					TIME_INTERVAL: Number(`${formData.interval}`)
 				}
 			});
 		} catch (e) {
@@ -98,11 +104,12 @@ export const actions: Actions = {
 		const name = formData.name as string;
 		const milesdriven = Number(formData.milesdriven);
 		const expenditure = Number(formData.expenditure);
+		const interval = Number(formData.interval);
 
 		const errors = [];
 
-		if (name.length < 2 || name.length > 50) {
-			errors.push('Name must be between 2 and 50 characters');
+		if (name.length < 2 || name.length > 20) {
+			errors.push('Name must be between 2 and 20 characters');
 		}
 
 		if (milesdriven < 5 || milesdriven > 75) {
@@ -111,6 +118,10 @@ export const actions: Actions = {
 
 		if (expenditure < 0) {
 			errors.push('Expenditure cannot be negative');
+		}
+
+		if (interval < 0 || interval > 3) {
+			errors.push('Interval must be between 0 and 3');
 		}
 
 		if (errors.length > 0) {
@@ -135,7 +146,8 @@ export const actions: Actions = {
 				data: {
 					NAME: `${formData.name}`,
 					MILES_DRIVEN: Number(`${formData.milesdriven}`),
-					KVA_EXPENDITURE: Number(`${formData.expenditure}`)
+					KWH_EXPENDITURE: Number(`${formData.expenditure}`),
+					TIME_INTERVAL: Number(`${formData.interval}`)
 				}
 			});
 		} catch (e) {

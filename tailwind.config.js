@@ -13,12 +13,17 @@ const config = {
 			}
 		},
 		extend: {
+			animation: {
+				'spinner-grow': 'spinner-grow 0.75s linear infinite',
+				'spinner-grow-slow': 'spinner-grow 1.5s linear infinite',
+			},
 			colors: {
 				epb: '#2C6EBF',
 				epbhover: '#255898',
 				epbsecond: "#f9f9f9",
 				epbthird: "#2d2d2d",
 				epbgreen: "#8AD74A",
+				epbtext: "#404040",
 				inputborder: '#8C8C8C',
 				border: "hsl(var(--border))",
 				input: "hsl(var(--input))",

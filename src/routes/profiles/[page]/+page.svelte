@@ -14,6 +14,7 @@
 		name: string;
 		milesDriven: number;
 		expenditure: number;
+		interval: number;
 		__checkbox?: any; // <-- Add this line
 	};
 
@@ -22,7 +23,8 @@
 			id: profile.ID,
 			name: profile.NAME,
 			milesDriven: profile.MILES_DRIVEN,
-			expenditure: profile.KVA_EXPENDITURE
+			expenditure: profile.KWH_EXPENDITURE,
+			interval: profile.TIME_INTERVAL
 		};
 	});
 
@@ -31,7 +33,8 @@
 			id: profile.ID,
 			name: profile.NAME,
 			milesDriven: profile.MILES_DRIVEN,
-			expenditure: profile.KVA_EXPENDITURE
+			expenditure: profile.KWH_EXPENDITURE,
+			interval: profile.TIME_INTERVAL
 		};
 	});
 

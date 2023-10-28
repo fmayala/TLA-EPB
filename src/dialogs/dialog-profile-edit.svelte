@@ -9,6 +9,7 @@
 	export let name: string = '';
 	export let milesdriven: number = 5;
 	export let expenditure: number = 0.35;
+	export let interval: number = 0;
 
 	type FormErrors = {
 		[key: string]: string;
@@ -156,10 +157,47 @@
 					}}
 				/>
 				<p class="text-sm text-muted-foreground mt-2">
-					EV kWh Expenditure is the amount of kilowatts an hour used by the vehicle per mile. See <a class="text-epb" target="_blank" href="https://ecocostsavings.com/electric-car-kwh-per-mile-list/">here</a> for common values.
+					EV kWh Expenditure is the amount of kilowatt-hours used by the vehicle per mile. See <a class="text-epb" target="_blank" href="https://ecocostsavings.com/electric-car-kwh-per-mile-list/">here</a> for common values.
 				</p>
 				{#if $formErrors.expenditure}
 					<p class="text-sm text-muted-foreground text-red-500">{$formErrors.expenditure}</p>
+				{/if}
+			</div>
+			<div class="mb-4">
+				<label
+					for="interval"
+					class="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+					>Time Interval</label
+				>
+				<input
+					class={'flex h-10 w-full rounded-md border border-input border-inputborder bg-transparent px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:border-epb disabled:cursor-not-allowed disabled:opacity-50'}
+					type="number"
+					step="1"
+					placeholder="ex: 1 -> 6AM-12PM"
+					min={0}
+					max={3}
+					value={interval}
+					name="interval"
+					on:input={(e) => {
+						// only remove the error if the field is not empty
+						if (e.target.value >= 0) {
+							formErrors.update((errors) => {
+								delete errors.interval;
+								return errors;
+							});
+						} else {
+							formErrors.update((errors) => {
+								errors.interval = 'Interval is not valid.';
+								return errors;
+							});
+						} 
+					}}
+				/>
+				<p class="text-sm text-muted-foreground mt-2">
+					This is the associated time interval for the profile. See the legend on the profiles page for more information.
+				</p>
+				{#if $formErrors.interval}
+					<p class="text-sm text-muted-foreground text-red-500">{$formErrors.interval}</p>
 				{/if}
 			</div>
 			<div class="flex flex-row mt-6 space-x-4">

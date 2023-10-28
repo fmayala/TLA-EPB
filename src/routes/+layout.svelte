@@ -2,28 +2,60 @@
 <script lang="ts">
 	import '../app.postcss';
 	import dataStore from '$lib/stores/dataStore';
-	import { onMount } from 'svelte';
 	import { goto, onNavigate } from '$app/navigation';
 	import { fade } from 'svelte/transition';
-	// import ApexCharts from 'apexcharts';
-	// import { chart } from "svelte-apexcharts";
+	import histogram from '$lib/stores/histogram';
+	import Chart from '$lib/components/Chart.svelte';
+	import { Button } from '$lib/components/ui/button';
+	import * as Tabs from '$lib/components/ui/tabs';
 
 	export let data;
 
-	let myChart: any;
+	let myChartRef: any;
+	let chartRef: any;
 
-	onNavigate((navigation) => {
-		if (!document.startViewTransition) return;
+	let series_data: any[] = [];
+	let series_data_histogram: any[] = [];
 
-		return new Promise((resolve) => {
-			document.startViewTransition(async () => {
-				resolve();
-				await navigation.complete;
-			});
-		});
-	});
+	let startDate = ''; // These will be string values in "YYYY-MM-DD" format.
+	let endDate = '';
+
+	let selectedBucket = null;
+
+	function applyZoom() {
+		if (startDate && endDate && myChartRef) {
+			const startTimestamp = new Date(startDate).getTime();
+			const endTimestamp = new Date(endDate).getTime();
+
+			if (startTimestamp < endTimestamp) {
+				// Zoom the chart to the user specified dates
+				myChartRef.zoomX(startTimestamp, endTimestamp);
+
+				// Get all months in between the start and end dates as [YYYY-MM]
+				const months = Array.from(
+					{ length: 12 },
+					(_, i) =>
+						`${new Date(startTimestamp).getFullYear()}-${(i + 1).toString().padStart(2, '0')}`
+				);
+
+				// Update the options to set the xaxis min and max, also change x-axis categories
+				options = {
+					...options,
+					xaxis: {
+						...options.xaxis,
+						categories: months,
+						min: startTimestamp,
+						max: endTimestamp
+					}
+				};
+			} else {
+				console.error('Start date should be earlier than end date.');
+			}
+		}
+	}
+
 	// Define the chart options
-	var options = {
+	let options = {
 		series: [
 			{
 				data: []
@@ -50,7 +82,8 @@
 		},
 		xaxis: {
 			type: 'datetime',
-			tickAmount: 6
+			tickAmount: 6,
+			min: 0
 		},
 		tooltip: {
 			x: {
@@ -73,11 +106,109 @@
 		}
 	};
 
-	onMount(async () => {
-		const ApexCharts = (await import('apexcharts')).default;
-		myChart = new ApexCharts(document.querySelector('#chart'), options);
-		myChart.render();
+	let load_categories = [
+		'0%',
+		'0-9%',
+		'10-19%',
+		'20-29%',
+		'30-39%',
+		'40-49%',
+		'50-59%',
+		'60-69%',
+		'70-79%',
+		'80-89%',
+		'90-99%',
+		'100-109%',
+		'110-119%',
+		'120-129%',
+		'130-139%',
+		'140-149%',
+		'150-174%',
+		'175-199%',
+		'200%+'
+	];
+
+	let selected_load_category = '0%';
+
+	let options_histogram = {
+		series: [
+			{
+				name: 'Peak Transformer Load',
+				data: [],
+				color: '#2C6EBF'
+			}
+		],
+		chart: {
+			type: 'bar',
+			height: 350,
+			animations: {
+				enabled: false
+			}
+		},
+		plotOptions: {
+			bar: {
+				horizontal: false,
+				columnWidth: '55%',
+				endingShape: 'rounded'
+			}
+		},
+		dataLabels: {
+			enabled: false
+		},
+		stroke: {
+			show: true,
+			width: 2,
+			colors: ['transparent']
+		},
+		xaxis: {
+			categories: load_categories
+		},
+		fill: {
+			opacity: 1
+		},
+		tooltip: {
+			y: {
+				formatter: function (val: number) {
+					return val + ' Measures';
+				}
+			}
+		}
+	};
+
+	onNavigate((navigation) => {
+		if (!document.startViewTransition) return;
+
+		return new Promise((resolve) => {
+			document.startViewTransition(async () => {
+				resolve();
+				await navigation.complete;
+			});
+		});
 	});
+
+	$: if ($histogram.data && $histogram.data.buckets) {
+		options_histogram = {
+			...options_histogram,
+			chart: {
+				...options_histogram.chart,
+				events: {
+					dataPointSelection(event, chartContext, config) {
+						selectedBucket = $histogram.data.buckets[config.dataPointIndex];
+						selected_load_category = load_categories[config.dataPointIndex];
+						//console.log(config.config.series[config.seriesIndex].data[config.dataPointIndex]);
+					}
+				}
+			}
+		};
+
+		series_data_histogram = [
+			{
+				name: 'Peak Transformer Load',
+				data: $histogram.data.buckets.map((item) => item.value),
+				color: '#2C6EBF'
+			}
+		];
+	}
 
 	// Reactive statement to handle data update
 	$: if ($dataStore.data && $dataStore.data.measures && $dataStore.data.driver_measures) {
@@ -85,6 +216,9 @@
 		let measures = $dataStore.data.measures;
 		let ev_measures = $dataStore.data.driver_measures;
 
+		if (measures.length < 1) {
+			measures = [[0, 0]];
+		}
 		// Get the timestamp of the first data point
 		const firstTimestamp = measures[0][0];
 
@@ -99,54 +233,35 @@
 		// Get the timestamp for the start of the year
 		const startOfYearTimestamp = firstDate.getTime();
 
+		// End of year timestamp
+		const endOfYearTimestamp = new Date(firstDate.getFullYear(), 11, 31).getTime();
+
+		// Get months in between start of the year and end of the year in this format ([2019-10])
+		const months = Array.from(
+			{ length: 12 },
+			(_, i) => `${firstDate.getFullYear()}-${(i + 1).toString().padStart(2, '0')}`
+		);
+
 		// Validate if measures array has data
 		if (measures.length > 0) {
 			// If the chart is already rendered, update the series with the complete data
-			if (myChart) {
-				// Update the y-axis max value
-				myChart.updateOptions({
-					xaxis: {
-						min: startOfYearTimestamp,
-						labels: {
-							// format: 'MMM yyyy'
-						}
-					},
-					yaxis: {
-						min: 0,
-						max: $dataStore.data.max,
-						tickAmount: 7,
-						labels: {
-							formatter: function (val: number) {
-								return `${val.toFixed(1)} KVA`;
-							}
-						}
-					},
-					annotations: {
-						yaxis: [
-							{
-								y: $dataStore.data.real_threshold,
-								borderColor: '#999',
-								label: {
-									show: true,
-									text: 'KVA Threshold',
-									position: 'center',
-									style: {
-										color: '#fff',
-										background: '#2C6EBF'
-									}
-								}
-							}
-						]
-					}
-				});
+			if (myChartRef) {
+				console.log('hi');
+				// myChartRef.zoomX(startOfYearTimestamp, measures[measures.length - 1][0]);
+			}
 
-				myChart.updateSeries([
+			// Set zoom controls
+			//startDate = new Date(startOfYearTimestamp).toISOString().split('T')[0];
+			// endDate = new Date(measures[measures.length - 1][0]).toISOString().split('T')[0];
+
+			if (ev_measures.length > 0) {
+				series_data = [
 					{
 						data: ev_measures,
 						name: 'EV Usage',
-						color: '#FFA500',
+						color: '#FFC000',
 						fill: {
-							opacity: 0.6
+							opacity: 1
 						}
 					},
 					{
@@ -157,43 +272,108 @@
 							opacity: 1
 						}
 					}
-				]);
-
-				// zoom chart to beginning and end of data
-
-				// console.log(new Date(measures[0][0]).getTime());
-				myChart.zoomX(startOfYearTimestamp, measures[measures.length - 1][0]);
+				];
+			} else {
+				series_data = [
+					{
+						data: measures,
+						name: 'Normal Usage',
+						color: '#2C6EBF',
+						fill: {
+							opacity: 1
+						}
+					}
+				];
 			}
+
+			// Update the chart options
+			options = {
+				...options,
+				series: series_data,
+				chart: {
+					...options.chart,
+					events: {
+						beforeResetZoom: (ctx, opt) => {
+							return {
+								xaxis: {
+									min: startOfYearTimestamp,
+									// End of year timestamp
+									max: endOfYearTimestamp
+								}
+							};
+						}
+					}
+				},
+				yaxis: {
+					min: 0,
+					max: $dataStore.data.max,
+					tickAmount: 7,
+					labels: {
+						formatter: function (val: number) {
+							return `${val.toFixed(1)} KVA`;
+						}
+					}
+				},
+				xaxis: {
+					...options.xaxis,
+					min: startOfYearTimestamp,
+					categories: months
+				},
+				annotations: {
+					yaxis: [
+						{
+							y: $dataStore.data.real_threshold,
+							borderColor: '#999',
+							label: {
+								show: true,
+								text: 'KVA Threshold',
+								position: 'center',
+								style: {
+									color: '#fff',
+									background: '#2C6EBF'
+								}
+							}
+						}
+					]
+				}
+			};
 		}
 	}
 </script>
 
 <div class="bg-epbthird h-14 relative">
-    <div class="flex flex-row items-center h-full">
-        <img class="ml-8 mr-8 cursor-pointer" src="/epb.svg" alt="EPB" height="80" width="80" on:click={()=>{
-            goto('/');
-        }} />
-        <div class="flex items-center space-x-4 h-full text-white text-xs tracking-widest">
-            <div class="flex flex-col justify-between h-full w-24 text-center">
-                <a
-                    href="/search"
-                    class="font-semibold cursor-pointer mt-6"
-                >SEARCH</a>
-                {#if data.pathname.includes('/search')}
-                    <div class="bg-epbgreen h-1 w-20 mx-auto"></div>
-                {/if}
-            </div>
-            <div class="flex flex-col justify-between h-full w-24 text-center">
-                <a
-                    href="/profiles"
-                    class="font-semibold cursor-pointer mt-6"
-                >PROFILES</a>
-                {#if data.pathname.includes('/profiles')}
-                    <div class="bg-epbgreen h-1 w-20 mx-auto"></div>
-                {/if}
-            </div>
-        </div>
-    </div>
+	<div class="flex flex-row items-center h-full">
+		<img
+			class="ml-8 mr-8 cursor-pointer"
+			src="/epb.svg"
+			alt="EPB"
+			height="80"
+			width="80"
+			on:click={() => {
+				goto('/');
+			}}
+		/>
+		<div class="flex items-center space-x-4 h-full text-white text-xs tracking-widest">
+			<div class="flex flex-col justify-between h-full w-24 text-center">
+				<a href="/search" class="font-semibold cursor-pointer mt-6">SEARCH</a>
+				{#if data.pathname.includes('/search')}
+					<div class="bg-epbgreen h-1 w-20 mx-auto" />
+				{/if}
+			</div>
+			<div class="flex flex-col justify-between h-full w-24 text-center">
+				<a href="/profiles" class="font-semibold cursor-pointer mt-6">PROFILES</a>
+				{#if data.pathname.includes('/profiles')}
+					<div class="bg-epbgreen h-1 w-20 mx-auto" />
+				{/if}
+			</div>
+			<div class="flex flex-col justify-between h-full w-32 text-center">
+				<a href="/ratings" class="font-semibold cursor-pointer mt-6">LOAD REPORTS</a>
+				{#if data.pathname.includes('/ratings')}
+					<div class="bg-epbgreen h-1 w-28 mx-auto" />
+				{/if}
+			</div>
+		</div>
+	</div>
 </div>
 <div class="main-container">
 	<!-- Left Column -->
@@ -207,36 +387,165 @@
 
 	<!-- Right Column -->
 	<div class="right-column custom-scroll bg-epbsecond">
-		<!-- Check if dataStore.data is available -->
-		{#if $dataStore.data}
-			<!-- Display the transformer SID -->
-			<h1 class="text-xl font-bold mb-6">Transformer SID: {$dataStore.data.xfmr_sid}</h1>
-
-			<div id="chart" />
-			<!-- Display other data in a markdown-like format -->
-			<div class="grid grid-cols-1 gap-6">
-				<div class="p-4 rounded">
-					<p class="text-base font-semibold mb-2">Total kWh Above Threshold</p>
-					<p class="text-xl">{$dataStore.data.total_kwh_above_threshold}</p>
-				</div>
-				<div class="px-4 py-2 rounded">
-					<p class="text-base font-semibold mb-2">Total Overloaded Hours</p>
-					<p class="text-xl">{$dataStore.data.total_overloaded_hours}</p>
-				</div>
-				<div class="p-4 rounded">
-					<p class="text-base font-semibold mb-2">Total Overloaded kWh</p>
-					<p class="text-xl">{$dataStore.data.total_overloaded_kwh}</p>
-				</div>
-				<div class="p-4 rounded">
-					<p class="text-base font-semibold mb-2">Upgrade Threshold</p>
-					<p class="text-xl">{$dataStore.data.upgrade_threshold}</p>
-				</div>
-				<div class="p-4 rounded">
-					<p class="text-base font-semibold mb-2">Total Available kWh</p>
-					<p class="text-xl">{$dataStore.data.total_available_kwh}</p>
-				</div>
+		{#if $histogram.data.buckets && $histogram.data.buckets.length > 0}
+			<div in:fade={{ duration: 300 }}>
+				<h1 class="text-xl font-bold mb-6 ml-4 text-epb mt-6">Load Distribution</h1>
+				<h1 class="text-md font-semibold ml-4 mb-6 text-epbtext tracking-widest">
+					{$histogram.data.kva_rating}.0 KVA RATED TRANSFORMERS
+				</h1>
+				<Chart
+					options={options_histogram}
+					series={series_data_histogram}
+					bind:chartInstance={chartRef}
+				/>
+				{#if selectedBucket && selectedBucket.transformers && selectedBucket.transformers.length > 0}
+					<div class="mt-6 ml-4">
+						<h2 class="text-lg font-bold mb-4 text-epb">Transformers for {selected_load_category} load utilization</h2>
+						<table class="min-w-full border-collapse">
+							<thead>
+								<tr>
+									<th class="px-4 py-2 border border-gray-200 bg-gray-100">Transformer ID</th>
+									<th class="px-4 py-2 border border-gray-200 bg-gray-100">KVA Measure</th>
+									<!-- Add more headers if your transformer data has more fields -->
+								</tr>
+							</thead>
+							<tbody>
+								{#each selectedBucket.transformers as transformer}
+									<tr>
+										<td class="px-4 py-2 border border-gray-200">{transformer.id}</td>
+										<td class="px-4 py-2 border border-gray-200">{transformer.measure}</td>
+										<!-- Add more cells if your transformer data has more fields -->
+									</tr>
+								{/each}
+							</tbody>
+						</table>
+					</div>
+				{/if}
 			</div>
-		{:else}{/if}
+		{/if}
+		<!-- Check if dataStore.data is available -->
+		{#if $dataStore.data && $dataStore.data.measures && $dataStore.data.driver_measures}
+			<div in:fade={{ duration: 300 }}>
+				<!-- Display the transformer SID -->
+				<div class="flex flex-row mb-6">
+					<h1 class="text-xl font-bold ml-4 text-epb">Transformer Report</h1>
+					<h1 class="text-black font-medium ml-4 self-center">SID: {$dataStore.data.xfmr_sid}</h1>
+				</div>
+				<h1 class="text-md font-semibold ml-4 mb-6 text-epbtext tracking-widest">
+					{$dataStore.data.max}.0 KVA RATED TRANSFORMER
+				</h1>
+
+				<!-- Controls for zooming the chart -->
+				<div class="chart-controls p-4 flex items-center justify-between mb-4">
+					<div class="flex items-center space-x-4">
+						<label for="startDate" class="text-sm font-semibold">Start Date:</label>
+						<input
+							id="startDate"
+							type="date"
+							bind:value={startDate}
+							min={'1970-1-1'}
+							class="flex h-10 w-full rounded-md border border-input border-inputborder bg-transparent px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:border-epb disabled:cursor-not-allowed disabled:opacity-50"
+						/>
+					</div>
+
+					<div class="flex items-center space-x-4">
+						<label for="endDate" class="text-sm font-semibold">End Date:</label>
+						<input
+							id="endDate"
+							type="date"
+							bind:value={endDate}
+							min={'1970-1-1'}
+							class="flex h-10 w-full rounded-md border border-input border-inputborder bg-transparent px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:border-epb disabled:cursor-not-allowed disabled:opacity-50"
+						/>
+					</div>
+
+					<Button class="bg-epb" on:click={applyZoom}>Apply Zoom</Button>
+				</div>
+				<Chart {options} series={series_data} bind:chartInstance={myChartRef} />
+				<Tabs.Root value="normal">
+					<Tabs.List>
+						<Tabs.Trigger value="normal">Normal Usage</Tabs.Trigger>
+						<Tabs.Trigger value="ev">EV Usage</Tabs.Trigger>
+					</Tabs.List>
+					<Tabs.Content value="normal">
+						<div class="grid grid-cols-1 gap-6">
+							<div class="p-4 rounded">
+								<p class="text-base font-semibold mb-2">Total kWh Above Threshold</p>
+								<p class="text-xl">
+									{Number($dataStore.data.normal.total_kwh_above_threshold).toLocaleString()}
+									<span class="text-epb font-semibold">kWh</span>
+								</p>
+							</div>
+							<div class="px-4 py-2 rounded">
+								<p class="text-base font-semibold mb-2">Total Overloaded Hours</p>
+								<p class="text-xl">
+									{Number($dataStore.data.normal.total_overloaded_hours).toLocaleString()}
+									<span class="text-epb font-semibold">hours</span>
+								</p>
+							</div>
+							<div class="p-4 rounded">
+								<p class="text-base font-semibold mb-2">Total Overloaded kWh</p>
+								<p class="text-xl">
+									{Number($dataStore.data.normal.total_overloaded_kwh).toLocaleString()}
+									<span class="text-epb font-semibold">kWh</span>
+								</p>
+							</div>
+							<div class="p-4 rounded">
+								<p class="text-base font-semibold mb-2">Upgrade Threshold</p>
+								<p class="text-xl">
+									{Number($dataStore.data.normal.upgrade_threshold).toLocaleString()}
+								</p>
+							</div>
+							<div class="p-4 rounded">
+								<p class="text-base font-semibold mb-2">Total Available kWh</p>
+								<p class="text-xl">
+									{Number($dataStore.data.normal.total_available_kwh).toLocaleString()}
+									<span class="text-epb font-semibold">kWh</span>
+								</p>
+							</div>
+						</div>
+					</Tabs.Content>
+					<Tabs.Content value="ev">
+						<div class="grid grid-cols-1 gap-6">
+							<div class="p-4 rounded">
+								<p class="text-base font-semibold mb-2">Total kWh Above Threshold</p>
+								<p class="text-xl">
+									{Number($dataStore.data.ev_usage.total_kwh_above_threshold).toLocaleString()}
+									<span class="text-epb font-semibold">kWh</span>
+								</p>
+							</div>
+							<div class="px-4 py-2 rounded">
+								<p class="text-base font-semibold mb-2">Total Overloaded Hours</p>
+								<p class="text-xl">
+									{Number($dataStore.data.ev_usage.total_overloaded_hours).toLocaleString()}
+									<span class="text-epb font-semibold">hours</span>
+								</p>
+							</div>
+							<div class="p-4 rounded">
+								<p class="text-base font-semibold mb-2">Total Overloaded kWh</p>
+								<p class="text-xl">
+									{Number($dataStore.data.ev_usage.total_overloaded_kwh).toLocaleString()}
+									<span class="text-epb font-semibold">kWh</span>
+								</p>
+							</div>
+							<div class="p-4 rounded">
+								<p class="text-base font-semibold mb-2">Upgrade Threshold</p>
+								<p class="text-xl">
+									{Number($dataStore.data.ev_usage.upgrade_threshold).toLocaleString()}
+								</p>
+							</div>
+							<div class="p-4 rounded">
+								<p class="text-base font-semibold mb-2">Total Available kWh</p>
+								<p class="text-xl">
+									{Number($dataStore.data.ev_usage.total_available_kwh).toLocaleString()}
+									<span class="text-epb font-semibold">kWh</span>
+								</p>
+							</div>
+						</div>
+					</Tabs.Content>
+				</Tabs.Root>
+			</div>
+		{/if}
 	</div>
 </div>
 

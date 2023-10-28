@@ -10,7 +10,6 @@
 	export let hasPreviousPage: boolean = false;
 	export let hasNextPage: boolean = false;
 
-
 	let filteredData = [...data];
 	let sortedData = [...filteredData];
 	let currentPage = 1;
@@ -44,6 +43,35 @@
 	<!-- <input bind:value={filterValue} placeholder="Filter profiles" />
 	<button on:click={() => (sortBy = 'id')}>Sort by ID</button>
 	<button on:click={() => (sortBy = '')}>Clear Sort</button> -->
+
+	<div class="mb-6 p-4 border rounded bg-gray-100">
+		<h2 class="text-xl font-bold mb-3">Legend</h2>
+
+		<ul class="list-disc pl-5">
+			<li><span class="font-semibold">ID:</span> A unique identifier for each profile.</li>
+			<li>
+				<span class="font-semibold">Name:</span> The name of the individual or entity associated with
+				the profile.
+			</li>
+			<li>
+				<span class="font-semibold">Miles Driven:</span> The total number of miles driven by the individual
+				or entity.
+			</li>
+			<li>
+				<span class="font-semibold">Expenditure:</span> The total expenditure of the EV expressed in kWh per mile.
+			</li>
+			<li>
+				<span class="font-semibold">Interval:</span> The time interval for which the data is
+				recorded. The values represent:
+				<ul class="pl-5 mt-2">
+					<li><span class="font-semibold">0:</span> Early Morning (<span class="font-bold">12AM-6AM</span>)</li>
+					<li><span class="font-semibold">1:</span> Morning (<span class="font-bold">6AM-12PM</span>)</li>
+					<li><span class="font-semibold">2:</span> Afternoon (<span class="font-bold">12PM-6PM</span>)</li>
+					<li><span class="font-semibold">3:</span> Evening (<span class="font-bold">6PM-12AM</span>)</li>
+				</ul>
+			</li>
+		</ul>
+	</div>
 
 	<Input
 		bind:value={filterValue}
@@ -89,6 +117,12 @@
 					class={cn(
 						'h-12 px-4 text-left align-middle font-medium text-muted-foreground [&:has([role=checkbox])]:pr-0',
 						''
+					)}>Interval</th
+				>
+				<th
+					class={cn(
+						'h-12 px-4 text-left align-middle font-medium text-muted-foreground [&:has([role=checkbox])]:pr-0',
+						''
 					)}
 				/>
 			</tr>
@@ -105,8 +139,14 @@
 					<td class="td-style">{row.name}</td>
 					<td class="td-style">{row.milesDriven}</td>
 					<td class="td-style">{row.expenditure}</td>
+					<td class="td-style">{row.interval}</td>
 					<td class="td-style">
-						<Actions id={row.id} name={row.name} milesdriven={row.milesDriven} expenditure={row.expenditure} />
+						<Actions
+							id={row.id}
+							name={row.name}
+							milesdriven={row.milesDriven}
+							expenditure={row.expenditure}
+						/>
 					</td>
 				</tr>
 			{/each}
@@ -118,11 +158,14 @@
 			<!-- {Object.keys($selectedDataIds).length} of{' '}
 			{$rows.length} row(s) selected. -->
 		</div>
-		<Button variant="outline" size="sm" on:click={() => {
-			$pageIndex--;
-			goto(`/profiles/${$pageIndex}`);
-		}} disabled={!hasPreviousPage}
-			>Previous</Button
+		<Button
+			variant="outline"
+			size="sm"
+			on:click={() => {
+				$pageIndex--;
+				goto(`/profiles/${$pageIndex}`);
+			}}
+			disabled={!hasPreviousPage}>Previous</Button
 		>
 
 		<Button
@@ -143,6 +186,12 @@
 	}
 
 	.td-style {
-		@apply p-4 align-middle;
+		@apply p-2 align-middle;
+	}
+
+	.truncate {
+		white-space: nowrap;
+		overflow: hidden;
+		text-overflow: ellipsis;
 	}
 </style>
