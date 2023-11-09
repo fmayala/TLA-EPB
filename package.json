@@ -47,6 +47,15 @@
 		"vite": "^4.4.2",
 		"vitest": "^0.32.2"
 	},
+	"overrides": {
+		"undici": "^5.27.0",
+		"@sveltejs/kit": {
+			"undici": "^5.27.0"
+		},
+		"@sveltejs/adapter-node": {
+			"undici": "^5.27.0"
+		}
+	},
 	"type": "module",
 	"dependencies": {
 		"@types/cors": "^2.8.14",

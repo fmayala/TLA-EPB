@@ -39,7 +39,7 @@ model XfmrMaxMeasures {
 }
 
 model XfmrMeasure {
-  ID                   Int      @id @default(autoincrement()) @map("ID")
+  ID                   Int      @default(autoincrement()) @map("ID")
   MEASURE_DATE         DateTime @map("MEASURE_DATE") @db.Timestamp(3) 
   UTC_TIME             DateTime @map("UTC_TIME") @db.Timestamp(3) 
   XFMR_SID             BigInt   @map("XFMR_SID") 
@@ -52,7 +52,9 @@ model XfmrMeasure {
 
   Dimension XfmrDimension @relation(fields: [XFMR_SID], references: [XFMR_SID])
 
+  @@id([ID, MEASURE_DATE])
   @@index([MEASURE_DATE, UTC_TIME], name: "XfmrMeasure_MEASURE_DATE_UTC_TIME_idx")
+  @@index([MEASURE_DATE], name: "idx_measure_date")
   @@index([XFMR_SID], name: "XfmrMeasure_XFMR_SID_idx")
   @@map("XfmrMeasure")
 }

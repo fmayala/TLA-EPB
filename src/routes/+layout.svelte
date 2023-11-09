@@ -393,6 +393,12 @@
 				<h1 class="text-md font-semibold ml-4 mb-6 text-epbtext tracking-widest">
 					{$histogram.data.kva_rating}.0 KVA RATED TRANSFORMERS
 				</h1>
+				<h1 class="text-md font-semibold ml-4 mb-6 text-epbtext tracking-widest">
+					For the month of {$histogram.data.month} {$histogram.data.year}
+				</h1>
+				<h1 class="text-md font-semibold ml-4 mb-6 text-epbtext tracking-widest">
+					Between the hours of {$histogram.data.time_interval_string}
+				</h1>
 				<Chart
 					options={options_histogram}
 					series={series_data_histogram}
