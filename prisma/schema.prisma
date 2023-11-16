@@ -64,7 +64,18 @@ model XfmrDriverProfile {
   NAME            String @map("NAME") @db.VarChar(20) 
   MILES_DRIVEN    Int    @map("MILES_DRIVEN")
   KWH_EXPENDITURE Float  @map("KWH_EXPENDITURE") @default(0)
-  TIME_INTERVAL   Int @map("TIME_INTERVAL") @default(0)
+  TIME_INTERVAL   Int @map("TIME_INTERVAL")
+  XfmrTimeInterval XfmrTimeInterval @relation(fields: [TIME_INTERVAL], references: [ID])
 
   @@map("XfmrDriverProfile")
+}
+
+model XfmrTimeInterval {
+  ID              Int    @id @default(autoincrement()) @map("ID")
+  Name            String @map("Name") @db.VarChar(20)
+  Start           DateTime    @map("Start") @db.Time()
+  End             DateTime   @map("End")  @db.Time()
+  DriverProfiles  XfmrDriverProfile[]
+
+  @@map("XfmrTimeInterval")
 }

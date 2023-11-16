@@ -1,11 +1,8 @@
 <script lang="ts">
 	// export let data;
-	import pageIndex from '$lib/stores/pagination';
-	import { onMount } from 'svelte';
-	import DialogProfile from '../../../dialogs/dialog-profile-create.svelte';
-	import TableProfiles from '../../../tables/table-profiles.svelte';
-	import { invalidateAll } from '$app/navigation';
 	import { page } from '$app/stores';
+	import TableProfiles from '../../../tables/driver/table-profiles.svelte';
+	import DialogProfileCreate from '../../../dialogs/driver/dialog-profile-create.svelte';
 
 	export let data: any;
 
@@ -56,7 +53,7 @@
 <div class="pt-6">
 	<div class="flex flex-row mb-12">
 		<h1 class="ml-1 self-center text-xl font-semibold mr-auto">Driver Profiles</h1>
-		<DialogProfile />
+		<DialogProfileCreate />
 	</div>
 	<TableProfiles
 		data={tableData}

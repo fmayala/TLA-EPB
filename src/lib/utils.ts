@@ -60,3 +60,11 @@ export const flyAndScale = (
         easing: cubicOut
     };
 };
+
+// Function to convert date object to a time string in UTC
+export function toUTCTimeString(d) {
+    const date = new Date(d);
+    const hours = date.getUTCHours().toString().padStart(2, '0');
+    const minutes = date.getUTCMinutes().toString().padStart(2, '0');
+    return `${hours}:${minutes}`;
+}

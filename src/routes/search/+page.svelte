@@ -4,11 +4,12 @@
 	import type { PageData } from './$types';
 	import { page } from '$app/stores';
 	import { onMount } from 'svelte';
-	import AsyncSelect from '$lib/components/AsyncSelect.svelte';
+	import AsyncSelect from '$lib/components/AsyncSelectDriver.svelte';
 	import { enhance } from '$app/forms';
 	import dataStore from '$lib/stores/dataStore';
 	import histogram from '$lib/stores/histogram';
 	import Select from '$lib/components/Select.svelte';
+	import AsyncSelectDriver from '$lib/components/AsyncSelectDriver.svelte';
 
 	export let data: PageData;
 	let sid: number = Number($page.url.searchParams.get('sid')) || 0;
@@ -111,7 +112,7 @@
 						class="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
 						>Driver Profile EV {index + 1}</label
 					>
-					<AsyncSelect
+					<AsyncSelectDriver
 						name={`selectedProfile${index}`}
 						placeholder={`Select a profile for EV ${index + 1}`}
 					/>

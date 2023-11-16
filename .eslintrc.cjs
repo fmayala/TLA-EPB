@@ -1,7 +1,6 @@
 // How to exclude svelte typescript files from eslint
 // https://stackoverflow.com/questions/63485656/how-to-exclude-svelte-typescript-files-from-eslint
 
-
 module.exports = {
 	root: true,
 	extends: [
@@ -14,7 +13,7 @@ module.exports = {
 	plugins: ['@typescript-eslint'],
 	parserOptions: {
 		sourceType: 'module',
-		ecmaVersion: 2020,
+		ecmaVersion: 2020
 		// extraFileExtensions: ['.svelte']
 	},
 	env: {
@@ -24,11 +23,16 @@ module.exports = {
 	},
 	overrides: [
 		{
-			// files: ['*.svelte'],
-			parser: 'svelte-eslint-parser',
-			parserOptions: {
-				parser: '@typescript-eslint/parser'
-			}
+			// Exclude Svelte files
+			files: ['*.svelte'],
+			processor: 'svelte/svelte'
+		},
+		{
+			// TypeScript files
+			files: ['*.ts', '*.tsx'],
+			parser: '@typescript-eslint/parser',
+			plugins: ['@typescript-eslint']
+			// other TypeScript specific configuration...
 		}
 	]
 };

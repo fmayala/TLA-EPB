@@ -4,6 +4,7 @@ const histogram: Writable<any> = writable({
     message: '',
     data: {
         buckets: [],
+        bucketsEV: [],
     } 
 } ); // initialize with null or some default value
 

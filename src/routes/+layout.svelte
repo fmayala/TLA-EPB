@@ -206,6 +206,11 @@
 				name: 'Peak Transformer Load',
 				data: $histogram.data.buckets.map((item) => item.value),
 				color: '#2C6EBF'
+			},
+			{
+				name: 'Peak Transformer Load EV',
+				data: $histogram.data.bucketsEV.map((item) => item.value),
+				color: '#FFC000'
 			}
 		];
 	}
@@ -360,15 +365,21 @@
 					<div class="bg-epbgreen h-1 w-20 mx-auto" />
 				{/if}
 			</div>
-			<div class="flex flex-col justify-between h-full w-24 text-center">
-				<a href="/profiles" class="font-semibold cursor-pointer mt-6">PROFILES</a>
+			<div class="flex flex-col justify-between h-full w-32 text-center">
+				<a href="/profiles" class="font-semibold cursor-pointer mt-6">DRIVER PROFILES</a>
 				{#if data.pathname.includes('/profiles')}
-					<div class="bg-epbgreen h-1 w-20 mx-auto" />
+					<div class="bg-epbgreen h-1 w-32 mx-auto" />
 				{/if}
 			</div>
 			<div class="flex flex-col justify-between h-full w-32 text-center">
-				<a href="/ratings" class="font-semibold cursor-pointer mt-6">LOAD REPORTS</a>
-				{#if data.pathname.includes('/ratings')}
+				<a href="/times" class="font-semibold cursor-pointer mt-6">TIME PROFILES</a>
+				{#if data.pathname.includes('/times')}
+					<div class="bg-epbgreen h-1 w-32 mx-auto" />
+				{/if}
+			</div>
+			<div class="flex flex-col justify-between h-full w-32 text-center">
+				<a href="/reports" class="font-semibold cursor-pointer mt-6">LOAD REPORTS</a>
+				{#if data.pathname.includes('/reports')}
 					<div class="bg-epbgreen h-1 w-28 mx-auto" />
 				{/if}
 			</div>
@@ -389,16 +400,14 @@
 	<div class="right-column custom-scroll bg-epbsecond">
 		{#if $histogram.data.buckets && $histogram.data.buckets.length > 0}
 			<div in:fade={{ duration: 300 }}>
-				<h1 class="text-xl font-bold mb-6 ml-4 text-epb mt-6">Load Distribution</h1>
-				<h1 class="text-md font-semibold ml-4 mb-6 text-epbtext tracking-widest">
-					{$histogram.data.kva_rating}.0 KVA RATED TRANSFORMERS
+				<h1 class="text-xl font-bold mb-6 ml-4 text-epb mt-6">PEAK LOAD DISTRIBUTION</h1>
+				<h1 class="text-MD font-bold ml-4 mb-6 text-epbtext tracking-widest">
+					ALL {$histogram.data.kva_rating}.0 KVA RATED TRANSFORMERS
 				</h1>
-				<h1 class="text-md font-semibold ml-4 mb-6 text-epbtext tracking-widest">
-					For the month of {$histogram.data.month} {$histogram.data.year}
-				</h1>
-				<h1 class="text-md font-semibold ml-4 mb-6 text-epbtext tracking-widest">
-					Between the hours of {$histogram.data.time_interval_string}
-				</h1>
+				<div class="flex flex-row ml-4 mb-4">
+					<p class="text-epbtext text-md tracking-widest uppercase"><span class="text-epb">MONTH</span> OF {$histogram.data.month} {$histogram.data.year}</p>
+					<p class="text-epbtext ml-2 text-md tracking-widest"><span class="text-epb">HOURS</span> OF {$histogram.data.time_interval_string}</p>
+				</div>
 				<Chart
 					options={options_histogram}
 					series={series_data_histogram}
@@ -433,8 +442,8 @@
 		{#if $dataStore.data && $dataStore.data.measures && $dataStore.data.driver_measures}
 			<div in:fade={{ duration: 300 }}>
 				<!-- Display the transformer SID -->
-				<div class="flex flex-row mb-6">
-					<h1 class="text-xl font-bold ml-4 text-epb">Transformer Report</h1>
+				<div class="flex flex-row mb-6 mt-6">
+					<h1 class="text-xl font-bold ml-4 text-epb">TRANSFORMER REPORT</h1>
 					<h1 class="text-black font-medium ml-4 self-center">SID: {$dataStore.data.xfmr_sid}</h1>
 				</div>
 				<h1 class="text-md font-semibold ml-4 mb-6 text-epbtext tracking-widest">

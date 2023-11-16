@@ -1,13 +1,15 @@
 version: '3.9'
 
 services:
-  postgres:
-    image: postgres:14-alpine
+  timescaledb:
+    image: timescale/timescaledb:latest-pg14
     ports:
       - 5432:5432
     volumes:
-      - ~/apps/postgres:/var/lib/postgresql/data
+      - timescaledb_data:/var/lib/postgresql/data
       - ./docker-entrypoint-initdb.d/init.sql:/docker-entrypoint-initdb.d/init.sql
+      - ./imports_measure:/imports_measure
+      - ./imports_xfmr:/imports_xfmr
     environment:
       - POSTGRES_PASSWORD=epbPass
       - POSTGRES_USER=epb
@@ -24,10 +26,17 @@ services:
       dockerfile: Dockerfile
     ports:
       - 3000:3000
+    volumes:
+      - ./imports_measure:/imports_measure
+      - ./imports_xfmr:/imports_xfmr
     depends_on:
-      postgres:
+      timescaledb:
         condition: service_healthy
     environment:
-      - DATABASE_URL=postgresql://epb:epbPass@postgres:5432/xfmrdb
+      - DATABASE_URL=postgresql://epb:epbPass@timescaledb:5432/xfmrdb
       # FORMAT
       # POSTGRESQL://<USER>:<PASSWORD>@<HOST>:<PORT>/<DATABASE>
+
+volumes:
+  timescaledb_data:
+    driver: local

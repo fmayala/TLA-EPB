@@ -1,14 +1,6 @@
-import { superValidate } from 'sveltekit-superforms/server';
 import db from '$lib/server/db';
 import { fail, type Actions } from '@sveltejs/kit';
-import { z } from 'zod';
 import type { PageServerLoad } from './$types';
-
-const formSchemaAddProfile = z.object({
-	name: z.string().min(2).max(50),
-	milesdriven: z.coerce.number().min(5).max(75),
-	expenditure: z.coerce.number().min(0)
-});
 
 export const load: PageServerLoad = async ({ params }) => {
 	const page = Number(params.page);
@@ -32,7 +24,6 @@ export const load: PageServerLoad = async ({ params }) => {
 
 	const stuff = await getProfiles();
 	return {
-		form: superValidate(formSchemaAddProfile),
 		profiles: stuff,
 		profileCount: await getProfileCount()
 	};
@@ -51,19 +42,31 @@ export const actions: Actions = {
 		const errors = [];
 
 		if (name.length < 2 || name.length > 20) {
-			errors.push('Name must be between 2 and 20 characters');
+			errors.push({
+				field: 'name',
+				message: 'Name must be between 2 and 20 characters'
+			});
 		}
 
 		if (milesdriven < 5 || milesdriven > 75) {
-			errors.push('Miles driven must be between 5 and 75');
+			errors.push({
+				field: 'milesdriven',
+				message: 'Miles driven must be between 5 and 75'
+			});
 		}
 
 		if (expenditure < 0) {
-			errors.push('Expenditure cannot be negative');
+			errors.push({
+				field: 'expenditure',
+				message: 'Expenditure cannot be negative'
+			});
 		}
 
-		if (interval < 0 || interval > 3) {
-			errors.push('Interval must be between 0 and 3');
+		if (interval < 0) {
+			errors.push({
+				field: 'interval',
+				message: 'Interval cannot be negative'
+			});
 		}
 
 		if (errors.length > 0) {
@@ -71,10 +74,7 @@ export const actions: Actions = {
 				status: 400,
 				data: {
 					message: 'Invalid field data.',
-					errors: errors.map((e, index) => ({
-						field: Object.keys(formSchemaAddProfile.shape)[index],
-						message: e
-					}))
+					errors: errors
 				}
 			});
 		}
@@ -86,7 +86,11 @@ export const actions: Actions = {
 					NAME: `${formData.name}`,
 					MILES_DRIVEN: Number(`${formData.milesdriven}`),
 					KWH_EXPENDITURE: Number(`${formData.expenditure}`),
-					TIME_INTERVAL: Number(`${formData.interval}`)
+					XfmrTimeInterval: {
+						connect: {
+							ID: Number(`${formData.interval}`)
+						}
+					}
 				}
 			});
 		} catch (e) {
@@ -99,8 +103,8 @@ export const actions: Actions = {
 	editProfile: async ({ request }) => {
 		const formData = Object.fromEntries(await request.formData());
 
-		// validate the form values
 		const id = Number(formData.id);
+		// validate the form values
 		const name = formData.name as string;
 		const milesdriven = Number(formData.milesdriven);
 		const expenditure = Number(formData.expenditure);
@@ -109,19 +113,31 @@ export const actions: Actions = {
 		const errors = [];
 
 		if (name.length < 2 || name.length > 20) {
-			errors.push('Name must be between 2 and 20 characters');
+			errors.push({
+				field: 'name',
+				message: 'Name must be between 2 and 20 characters'
+			});
 		}
 
 		if (milesdriven < 5 || milesdriven > 75) {
-			errors.push('Miles driven must be between 5 and 75');
+			errors.push({
+				field: 'milesdriven',
+				message: 'Miles driven must be between 5 and 75'
+			});
 		}
 
 		if (expenditure < 0) {
-			errors.push('Expenditure cannot be negative');
+			errors.push({
+				field: 'expenditure',
+				message: 'Expenditure cannot be negative'
+			});
 		}
 
-		if (interval < 0 || interval > 3) {
-			errors.push('Interval must be between 0 and 3');
+		if (interval < 0) {
+			errors.push({
+				field: 'interval',
+				message: 'Interval cannot be negative'
+			});
 		}
 
 		if (errors.length > 0) {
@@ -129,10 +145,7 @@ export const actions: Actions = {
 				status: 400,
 				data: {
 					message: 'Invalid field data.',
-					errors: errors.map((e, index) => ({
-						field: Object.keys(formSchemaAddProfile.shape)[index],
-						message: e
-					}))
+					errors: errors
 				}
 			});
 		}
@@ -147,14 +160,18 @@ export const actions: Actions = {
 					NAME: `${formData.name}`,
 					MILES_DRIVEN: Number(`${formData.milesdriven}`),
 					KWH_EXPENDITURE: Number(`${formData.expenditure}`),
-					TIME_INTERVAL: Number(`${formData.interval}`)
+					XfmrTimeInterval: {
+						connect: {
+							ID: Number(`${formData.interval}`)
+						}
+					}
 				}
 			});
 		} catch (e) {
 			console.log(e);
 		}
 		return {
-			message: 'Profile updated successfully.'
+			message: 'Profile updated successfully'
 		};
 	},
 	deleteProfile: async ({ request }) => {
