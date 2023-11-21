@@ -17,13 +17,6 @@ COPY . .
 # Run the build script from package.json
 RUN yarn run build
 
-# Copy the build folder to the /app directory
-RUN cp -r build/ /app
-
-# # ... (the rest of your Dockerfile)
-# COPY entrypoint.sh /app/entrypoint.sh
-# ENTRYPOINT ["/app/entrypoint.sh"]
-
 # Your start command
 CMD ["node", "server.js"]
 
