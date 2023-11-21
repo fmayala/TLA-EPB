@@ -153,7 +153,7 @@ To import transformer identifying records and transformer measure data utilize t
         1. import_data.sh (XfmrMeasure data)
         2. import_xfmr.sh (XfmrDimension data)
 
-3. To ensure proper imports, after your container is successfully created and running. Place your identifying transformer csv file in the **import_xfmr** folder. Likewise, place any measure data csv files in the **import_measure** folder. Example files are provided in the **example** folder. 
+3. To ensure proper imports, after your container is successfully created and running. Place your identifying transformer csv file in the **import_xfmr** folder. Likewise, place any measure data csv files in the **import_measure** folder. Example files are provided in the **example** folder.
 
 4. Run the below:
     ```bash
@@ -165,3 +165,9 @@ To import transformer identifying records and transformer measure data utilize t
 4. Run the **import_xfmr** script that corresponds to your platform.
 
 5. After running the **import_xfmr** script successfully run the **import_data** script.
+
+### Problems?
+
+If you are unable to place the data needed to import into the **imports_measure** and **imports_xfmr** folders on Linux it's probably a permission issue. Delete the folders and recreate them manually. Then repeat the above process.
+
+If you have any other problems, please create an issue describing the steps taken and what you are experiencing.
