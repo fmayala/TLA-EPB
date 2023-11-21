@@ -3,6 +3,7 @@ version: '3.9'
 services:
   timescaledb:
     image: timescale/timescaledb:latest-pg14
+    container_name: tla-epb-timescaledb-1
     ports:
       - 5432:5432
     volumes:
@@ -21,6 +22,7 @@ services:
       retries: 5
 
   app:
+    container_name: tla-epb-app-1
     build: 
       context: .
       dockerfile: Dockerfile
