@@ -11,11 +11,14 @@ COPY package.json yarn.lock ./
 # Install all dependencies
 RUN yarn
 
+# Copy the rest of the code
+COPY . .
+
 # Run the build script from package.json
 RUN yarn run build
 
-# Copy the rest of the code
-COPY . .
+# Copy the build folder to the /app directory
+RUN cp -r build/ /app
 
 # # ... (the rest of your Dockerfile)
 # COPY entrypoint.sh /app/entrypoint.sh

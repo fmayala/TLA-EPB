@@ -110,6 +110,12 @@ After cloning the repository and changing configuration as needed run the follow
 docker-compose up -d
 ```
 
+### Stopping
+
+```bash
+docker-compose down
+```
+
 ## Importing Data
 
 To import transformer identifying records and transformer measure data utilize the method below.
