@@ -51,16 +51,19 @@ version: '3.9'
 services:
   timescaledb:
     image: timescale/timescaledb:latest-pg14
+    container_name: tla-epb-timescaledb-1
+    restart: always
     ports:
       - 5432:5432
     volumes:
       - timescaledb_data:/var/lib/postgresql/data
       - ./docker-entrypoint-initdb.d/init.sql:/docker-entrypoint-initdb.d/init.sql
-      - ./imports:/imports
+      - ./imports_measure:/imports_measure
+      - ./imports_xfmr:/imports_xfmr
     environment:
-      - POSTGRES_PASSWORD=<PASSWORD>
-      - POSTGRES_USER=<USER>
-      - POSTGRES_DB=<DATABASE>
+      - POSTGRES_PASSWORD=epbPass
+      - POSTGRES_USER=epb
+      - POSTGRES_DB=xfmrdb
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U epb -d xfmrdb"]
       interval: 10s
@@ -68,18 +71,21 @@ services:
       retries: 5
 
   app:
+    container_name: tla-epb-app-1
+    restart: always
     build: 
       context: .
       dockerfile: Dockerfile
     ports:
       - 3000:3000
     volumes:
-      - ./imports:/imports
+      - ./imports_measure:/imports_measure
+      - ./imports_xfmr:/imports_xfmr
     depends_on:
       timescaledb:
         condition: service_healthy
     environment:
-      - DATABASE_URL=postgresql://<USER>:<PASSWORD>@timescaledb:5432/<DATABASE>
+      - DATABASE_URL=postgresql://epb:epbPass@timescaledb:5432/xfmrdb
       # FORMAT
       # POSTGRESQL://<USER>:<PASSWORD>@<HOST>:<PORT>/<DATABASE>
 
@@ -110,10 +116,27 @@ After cloning the repository and changing configuration as needed run the follow
 docker-compose up -d
 ```
 
-### Stopping
+### Stopping (only deletes containers, not data)
+
+Use the below to stop all containers for this application. This will only delete containers, not any volumes where data is stored. If you wish to delete data as well, add the **--volumes** flag to the end of the command below.
 
 ```bash
 docker-compose down
+```
+
+### Rebuilding images for updated containers (maintenance)
+If there are any updates to this application and you wish to reflect them in your current deployed applicatiion, you must first stop the containers, re-build the images, and then re-deploy through docker.
+
+```bash
+docker-compose down
+```
+
+```bash
+docker-compose build
+```
+
+```bash
+docker-compose up -d
 ```
 
 ## Importing Data
