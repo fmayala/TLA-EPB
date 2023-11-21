@@ -4,6 +4,7 @@ services:
   timescaledb:
     image: timescale/timescaledb:latest-pg14
     container_name: tla-epb-timescaledb-1
+    restart: always
     ports:
       - 5432:5432
     volumes:
@@ -23,6 +24,7 @@ services:
 
   app:
     container_name: tla-epb-app-1
+    restart: always
     build: 
       context: .
       dockerfile: Dockerfile
