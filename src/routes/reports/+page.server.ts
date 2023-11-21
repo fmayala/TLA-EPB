@@ -4,12 +4,12 @@ import { toUTCTimeString } from '$lib/utils';
 import type { Actions } from './$types';
 
 function convertTo12HourFormat(time24) {
-    const [hours, minutes] = time24.split(':');
-    const hoursInt = parseInt(hours, 10);
-    const ampm = hoursInt >= 12 ? 'PM' : 'AM';
-    let hours12 = hoursInt % 12;
-    if (hours12 === 0) hours12 = 12;
-    return `${hours12}:${minutes} ${ampm}`;
+	const [hours, minutes] = time24.split(':');
+	const hoursInt = parseInt(hours, 10);
+	const ampm = hoursInt >= 12 ? 'PM' : 'AM';
+	let hours12 = hoursInt % 12;
+	if (hours12 === 0) hours12 = 12;
+	return `${hours12}:${minutes} ${ampm}`;
 }
 
 /** @type {import('./$types').PageServerLoad} */
@@ -139,8 +139,11 @@ export const actions: Actions = {
 		// Retrieve the peak KVA measures for each transformer
 		const peakMeasures = await db.$queryRaw`
 			SELECT 
+				DISTINCT ON (m."XFMR_SID") 
 				m."XFMR_SID",
-				MAX(m."KVA_MEASURE") AS "KVAMEASURE"
+				m."KVA_MEASURE" AS "KVAMEASURE",
+				m."MEASURE_DATE",
+				m."UTC_TIME"
 			FROM 
 				"XfmrMeasure" m
 			JOIN 
@@ -150,12 +153,13 @@ export const actions: Actions = {
 				AND EXTRACT(HOUR FROM m."UTC_TIME") >= ${timeOfDayFromParts[0]}
 				AND (EXTRACT(HOUR FROM m."UTC_TIME") < ${timeOfDayToParts[0]}
 					OR (
-					EXTRACT(HOUR FROM m."UTC_TIME") = ${timeOfDayToParts[0]}
-					AND EXTRACT(MINUTE FROM m."UTC_TIME") < ${timeOfDayToParts[1]}
+						EXTRACT(HOUR FROM m."UTC_TIME") = ${timeOfDayToParts[0]}
+						AND EXTRACT(MINUTE FROM m."UTC_TIME") < ${timeOfDayToParts[1]}
 					))
 				AND d."KVA_RATING" = ${kva_rating_str}
-			GROUP BY 
-				m."XFMR_SID";
+			ORDER BY 
+				m."XFMR_SID", 
+				m."KVA_MEASURE" DESC;
 		`;
 
 		// Bucket logic now uses peakMeasures
@@ -173,11 +177,13 @@ export const actions: Actions = {
 			if (!transformerExists) {
 				bucketCounts[bucket].transformers.push({
 					id: peakMeasure.XFMR_SID,
-					measure: peakMeasure.KVAMEASURE
+					measure: peakMeasure.KVAMEASURE.toFixed(3),
+					load_percentage: percentage.toFixed(3),
+					bucket: bucket,
+					time: peakMeasure.MEASURE_DATE
 				});
 			}
 		});
-
 
 		// Helper function to create bucketCounts list based on EV load
 		const createBucketCountsBasedOnEvLoad = (measures) => {
@@ -201,7 +207,10 @@ export const actions: Actions = {
 				if (!transformerExists) {
 					bucketCountsEvLoad[bucket].transformers.push({
 						id: measure.XFMR_SID,
-						measure: adjustedPeakMeasure
+						measure: adjustedPeakMeasure.toFixed(3),
+						load_percentage: percentage.toFixed(3),
+						bucket: bucket,
+						time: measure.MEASURE_DATE
 					});
 				}
 			});
@@ -209,23 +218,40 @@ export const actions: Actions = {
 			return bucketCountsEvLoad;
 		};
 
-		// Rest of your existing code...
-
 		// Assuming you have validated evload and it is the maximum EV load
 		const peakMeasuresEvLoad = createBucketCountsBasedOnEvLoad(peakMeasures);
 
+
+		// Get total available KW, but first convert KVA measure back to KW, and also subtract it from the KVA rating
+		const total_available_kw = peakMeasures.reduce((acc, curr) => {
+			const kw = curr.KVAMEASURE * 0.9;
+			return acc + (kva_rating - kw);
+		}, 0);
+
+		// Get total available KW for EV load
+		const total_available_kw_ev = peakMeasures.reduce((acc, curr) => {
+			const extraLoad = (7.5 / 0.9) * evload;
+			const adjustedPeakMeasure = curr.KVAMEASURE + extraLoad;
+			const kw = adjustedPeakMeasure * 0.9;
+			return acc + (kva_rating - kw);
+		}, 0);
+
+
 		// Convert the 24-hour format to 12-hour format for both start and end times
-        const time_interval_string = `${convertTo12HourFormat(from)} - ${convertTo12HourFormat(to)}`;
+		const time_interval_string = `${convertTo12HourFormat(from)} - ${convertTo12HourFormat(to)}`;
 
 		return {
 			message: 'Success',
 			data: {
 				buckets: bucketCounts,
 				bucketsEV: peakMeasuresEvLoad,
+				evload: evload,
 				month: new Date(startDate).toLocaleString('default', { month: 'long', timeZone: 'UTC' }),
 				year: startDate.getFullYear(),
 				time_interval_string: time_interval_string,
-				kva_rating
+				kva_rating,
+				total_available_kw: total_available_kw,
+				total_available_kw_ev: total_available_kw_ev,
 			}
 		};
 	}

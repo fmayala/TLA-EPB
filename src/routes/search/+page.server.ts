@@ -69,6 +69,7 @@ export const actions: Actions = {
 		const sid = Number(formData.t_sid);
 		const evs = Number(formData.evs);
 		const percentage = Number(formData.threshold_percentage);
+		const year = Number(formData.year);
 		// const interval = Number(formData.interval);
 		const errors = [];
 
@@ -109,6 +110,13 @@ export const actions: Actions = {
 			});
 		}
 
+		if (year === undefined || year === null || isNaN(year)) {
+			errors.push({
+				field: 'year',
+				message: 'Please enter a valid year.'
+			});
+		}
+
 		if (errors.length > 0) {
 			return {
 				message: 'Invalid field data.',
@@ -128,12 +136,19 @@ export const actions: Actions = {
 
 		const kvaRating = Number(kvaRes?.KVA_RATING);
 
+		const startDate = new Date(year, 0, 1); // First day of the selected year
+		const endDate = new Date(year + 1, 0, 1); // First day of the next year
+
 		// HERE
 		const measures = await db.xfmrMeasure.findMany({
 			where: {
 				XFMR_SID: sid,
 				KVA_MEASURE: {
 					lt: kvaRating * 4
+				},
+				MEASURE_DATE: {
+					gte: startDate,
+					lt: endDate
 				}
 			},
 			orderBy: [
@@ -156,20 +171,12 @@ export const actions: Actions = {
 			}
 		});
 
-		// console.log(driver_profiles);
-
-		// const driver_profile = await db.xfmrDriverProfile.findUnique({
-		// 	where: {
-		// 		ID: profile
-		// 	}
-		// });
-
 		const newMeasures = measures.map((measure) => {
 			// console.log(measure);
 			return [new Date(measure.UTC_TIME).getTime(), measure.KVA_MEASURE];
 		});
 
-		let driver_measures = await convertNormalToEvUsage(
+		const driver_measures = await convertNormalToEvUsage(
 			measures,
 			evs,
 			driver_profiles,
@@ -203,14 +210,11 @@ export const actions: Actions = {
 				},
 				xfmr_sid: sid,
 				measures: newMeasures,
-				driver_measures: await ev_usage_measures(
-					measures,
-					evs,
-					driver_profiles,
-					profileCounts
-				),
+				driver_measures: await ev_usage_measures(measures, evs, driver_profiles, profileCounts),
 				max: kvaRating,
-				real_threshold: kvaRating * (percentage / 100)
+				real_threshold: kvaRating * (percentage / 100),
+				year: year,
+				evs: evs
 			} as GeneratedData
 		} as GenerateResponse;
 	}

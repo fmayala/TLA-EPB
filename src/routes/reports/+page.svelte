@@ -22,6 +22,8 @@
 
 	let errors: [] = [];
 
+	let loading: boolean = false;
+
 	// $: console.log(simulate_ev_load)
 </script>
 
@@ -65,10 +67,22 @@
 		action="?/generate"
 		class="mt-5"
 		use:enhance={() => {
+			loading = true;
 			return async ({ result, update }) => {
 				if (result) {
+					loading = false;
 					$histogram.data = result.data.data || {};
-					$dataStore.data = {};
+					$dataStore.data = {
+						normal: {},
+						ev_usage: {},
+						xfmr_sid: 0,
+						measures: [],
+						driver_measures: [],
+						max: 0,
+						real_threshold: 0,
+						year: 0,
+						evs: 0,
+					};
 					if (result.data.errors) errors = result.data.errors;
 				}
 
@@ -152,12 +166,16 @@
 			</div>
 		{/if}
 
-		<Button class="w-full mt-10 bg-epb hover:bg-epbhover">
-			<!-- {#if loading} -->
-			<!-- <div class="w-4 h-4 rounded-full bg-gray-200 pulse" /> -->
-			<!-- {:else} -->
-			Generate
-			<!-- {/if} -->
+		<Button class="w-full mt-10 bg-epb hover:bg-epbhover" on:click={(e)=> {
+			if (loading) {
+				e.preventDefault();
+			}
+		}}>
+			{#if loading}
+				<div class="w-4 h-4 rounded-full bg-gray-200 pulse" />
+			{:else}
+				Generate
+			{/if}
 		</Button>
 	</form>
 </div>

@@ -27,4 +27,6 @@ export type GeneratedData = {
     driver_measures: [];
     max: number;
     real_threshold: number;
+    year: number;
+    evs: 0,
 }

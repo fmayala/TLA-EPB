@@ -31,7 +31,7 @@
 	</Button>
 	<Dialog.Content>
 		<Dialog.Header>
-			<Dialog.Title>Add a driver profile</Dialog.Title>
+			<Dialog.Title>Edit a driver profile</Dialog.Title>
 		</Dialog.Header>
 		<form
 			method="POST"

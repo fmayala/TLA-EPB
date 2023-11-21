@@ -13,9 +13,10 @@
 
 	export let data: PageData;
 	let sid: number = Number($page.url.searchParams.get('sid')) || 0;
+	let ev_count: number = 0;
+	let selectedYear: number = new Date().getFullYear(); // Default to current year
 	let loading: boolean = false;
 	let search_loading: boolean = false;
-	let ev_count: number = 0;
 
 	let errors: [] = [];
 
@@ -42,8 +43,45 @@
 <!-- <TransformerSearch form={data.search} /> -->
 <div class="pt-6">
 	<h1 class="text-xl font-medium">Transformer Search</h1>
+	<div class="mb-6 mt-6 p-4 border rounded bg-gray-100">
+		<p class="mb-4">
+			This tool is designed to assess provide a yearly holistical view of the 15-minute load
+			measurements from a single transfomer and simulated electric vehicle usage. The tool allows
+			for the analysis of the transformer load based on the following parameters:
+		</p>
+
+		<ul class="list-disc pl-5">
+			<li>
+				<span class="font-semibold">XFMR SID:</span> Specify a valid transformer ID generate a report.
+			</li>
+			<li>
+				<span class="font-semibold">Number of EVs:</span> The amount of electric vehicles to simulate
+				additional load on the transformers.
+			</li>
+			<li>
+				<span class="font-semibold">Dynamic Fields if Number of EVs are Greater than 0:</span> The
+				driver profile of each electric vehicle. The driver profile is used to simulate the load
+				across the day based on the driving habits of the driver. See the
+				<a href="/profiles" class="text-epb">Driver Profiles</a> page for more information. on the electrical
+				grid, particularly on transformers of the selected KVA rating.
+			</li>
+			<li>
+				<span class="font-semibold">Year:</span> The year to generate the report for. The report will
+				only include measures from the selected year.
+			</li>
+			<li>
+				<span class="font-semibold">Threshold Percentage:</span> Specify the load threshold percentage
+				to be used in the analysis. It serves as an indicator of the transformer load and is calculated
+				as the ratio of the transformer load to the transformer capacity.
+			</li>
+		</ul>
+	</div>
 	<form action="/search" method="GET" class="mt-5">
-		<div class="flex flex-row">
+		<label
+			class="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 mb-4"
+			for="ev">Transfomer ID (XFMR SID)</label
+		>
+		<div class="flex flex-row mt-4">
 			<input
 				class="flex h-10 w-full rounded-md border border-input border-inputborder bg-transparent px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:border-epb disabled:cursor-not-allowed disabled:opacity-50"
 				placeholder="Enter Transformer ID (XFMR SID)"
@@ -69,7 +107,10 @@
 						loading = false;
 						// @ts-ignore
 						$dataStore.data = result.data.data;
-						$histogram.data = {};
+						$histogram.data = {
+							buckets: [],
+							bucketsEV: []
+						};
 						if (result.data.errors) errors = result.data.errors;
 					} else {
 						errors = [];
@@ -91,6 +132,9 @@
 				>
 				<input
 					bind:value={ev_count}
+					on:input={() => {
+						if (ev_count > 10) ev_count = 10;
+					}}
 					max={10}
 					min={0}
 					name="evs"
@@ -125,6 +169,26 @@
 				</div>
 			{/each}
 
+			<div class="flex flex-col mb-4">
+				<label class="text-sm font-medium mb-4" for="year">Year</label>
+				<select
+					bind:value={selectedYear}
+					name="year"
+					class="flex h-10 w-full rounded-md border border-input border-inputborder bg-transparent px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:border-epb disabled:cursor-not-allowed disabled:opacity-50"
+				>
+					{#each Array(10)
+						.fill()
+						.map((_, i) => new Date().getFullYear() - i) as year}
+						<option value={year}>{year}</option>
+					{/each}
+				</select>
+				{#if errors.map((e) => e.field).includes(`year`)}
+					<p class="text-red-500 text-sm mt-2">
+						{errors[errors.findIndex((e) => e.field.includes(`year`))].message}
+					</p>
+				{/if}
+			</div>
+
 			<div class="my-5" />
 			<div class="flex flex-col space-y-5">
 				<div class="flex flex-col">
@@ -141,42 +205,15 @@
 						class="flex h-10 w-full rounded-md border border-input border-inputborder bg-transparent px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:border-epb disabled:cursor-not-allowed disabled:opacity-50"
 					/>
 				</div>
-				<!-- <div class="flex flex-col">
-					<label
-						class="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
-						for="threshold_percentage">Time Interval</label
-					>
-					<!-- <Select
-						name="interval"
-						placeholder="Select an interval"
-						options={[
-							{
-								ID: 1,
-								NAME: 'Early Morning (12 AM to 6 AM)'
-							},
-							{
-								ID: 2,
-								NAME: 'Morning (6 AM to 12 PM)'
-							},
-							{
-								ID: 3,
-								NAME: 'Afternoon (12 PM to 6 PM)'
-							},
-							{
-								ID: 4,
-								NAME: 'Evening (6 PM to 12 AM)'
-							}
-						]}
-					/> -->
-					<!-- Show error for Select 
-					{#if errors.map((e) => e.field).includes(`interval`)}
-						<p class="text-red-500 text-sm mt-2">
-							{errors[errors.findIndex((e) => e.field.includes(`interval`))].message}
-						</p>
-					{/if}
-				</div> -->
 			</div>
-			<Button class="w-full mt-10 bg-epb hover:bg-epbhover">
+			<Button
+				class="w-full mt-10 bg-epb hover:bg-epbhover"
+				on:click={(e) => {
+					if (loading) {
+						e.preventDefault();
+					}
+				}}
+			>
 				{#if loading}
 					<div class="w-4 h-4 rounded-full bg-gray-200 pulse" />
 				{:else}

@@ -8,6 +8,7 @@
 	import Chart from '$lib/components/Chart.svelte';
 	import { Button } from '$lib/components/ui/button';
 	import * as Tabs from '$lib/components/ui/tabs';
+	import * as Excel from 'exceljs';
 
 	export let data;
 
@@ -193,8 +194,16 @@
 				...options_histogram.chart,
 				events: {
 					dataPointSelection(event, chartContext, config) {
-						selectedBucket = $histogram.data.buckets[config.dataPointIndex];
-						selected_load_category = load_categories[config.dataPointIndex];
+						console.log(event);
+						console.log(chartContext);
+						console.log(config);
+						if (config.seriesIndex === 0) {
+							selectedBucket = $histogram.data.buckets[config.dataPointIndex];
+							selected_load_category = load_categories[config.dataPointIndex];
+						} else {
+							selectedBucket = $histogram.data.bucketsEV[config.dataPointIndex];
+							selected_load_category = load_categories[config.dataPointIndex];
+						}
 						//console.log(config.config.series[config.seriesIndex].data[config.dataPointIndex]);
 					}
 				}
@@ -344,6 +353,158 @@
 			};
 		}
 	}
+
+	async function exportToXLSXHistogram(filename) {
+		// Create a new workbook
+		const workbook = new Excel.Workbook();
+		const normalUsageWorksheet = workbook.addWorksheet('Normal Usage');
+
+		// Define columns with headers and formatting if needed
+		normalUsageWorksheet.columns = [
+			{ header: 'ID', key: 'id', width: 10 },
+			{ header: 'KVA_MEASURE', key: 'measure', width: 15 },
+			{ header: 'LOAD_PERCENT', key: 'load_percentage', width: 15 },
+			{ header: 'BUCKET', key: 'bucket', width: 15 },
+			{
+				header: 'PEAK_MEASURE_TIME',
+				key: 'time',
+				width: 22,
+				style: { numFmt: 'mm/dd/yyyy hh:mm:ss AM/PM' }
+			}
+		];
+
+		// Function to map transformer data to the desired format
+		const mapTransformers = (transformers, bucketIndex) => {
+			return transformers.map((transformer) => ({
+				id: transformer.id.toString(),
+				measure: transformer.measure,
+				load_percentage: transformer.load_percentage,
+				bucket: load_categories[bucketIndex],
+				time: new Date(transformer.time) // Convert to Date object
+			}));
+		};
+
+		// Process data for Normal Usage
+		$histogram.data.buckets.forEach((bucket, index) => {
+			const transformedData = mapTransformers(bucket.transformers, index);
+			transformedData.forEach((data) => {
+				normalUsageWorksheet.addRow(data);
+			});
+		});
+
+		// Process and append data for EV Usage (if exists)
+		if ($histogram.data.bucketsEV && $histogram.data.bucketsEV.length > 0) {
+			const evUsageWorksheet = workbook.addWorksheet(`${$histogram.data.evload} EVs Usage`);
+			evUsageWorksheet.columns = [...normalUsageWorksheet.columns]; // Copy columns from the normal usage sheet
+
+			$histogram.data.bucketsEV.forEach((bucketEV, index) => {
+				const transformedEVData = mapTransformers(bucketEV.transformers, index);
+				transformedEVData.forEach((data) => {
+					evUsageWorksheet.addRow(data);
+				});
+			});
+		}
+
+		// Write the workbook to a file
+		// await workbook.xlsx.writeFile(filename + '.xlsx');
+		workbook.xlsx.writeBuffer().then((data) => {
+			const blob = new Blob([data], {
+				type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet;charset=UTF-8'
+			});
+			const url = window.URL.createObjectURL(blob);
+			const a = document.createElement('a');
+			a.href = url;
+			a.download = `Load_Utilization_Report-PeakMeasures-${$histogram.data.month}_${$histogram.data.year}-EVs_${$histogram.data.evload}-NormalUsage.xlsx`;
+			a.click();
+		});
+	}
+
+	function exportToXLSXRiskReport() {
+		// Create a new workbook
+		const workbook = new Excel.Workbook();
+
+		// Normal Usage
+		const normalUsageWorksheet = workbook.addWorksheet('Normal Usage');
+
+		// Define columns with headers and formatting if needed
+		normalUsageWorksheet.columns = [
+			{ header: 'XFMR_SID', key: 'id', width: 15 },
+			{ header: 'KVA_MEASURE', key: 'measure', width: 15 },
+			{ header: 'LOAD_PERCENT', key: 'load_percentage', width: 15 },
+			{
+				header: 'MEASURE_DATE',
+				key: 'time',
+				width: 22,
+			},
+			{
+				header: 'UTC_TIME',
+				key: 'interval',
+				width: 22,
+				style: { numFmt: 'mm/dd/yyyy hh:mm:ss AM/PM' }
+			}
+		];
+
+		const mapMeasures = (measures) => {
+			return measures.map((measure) => {
+				const time = new Date(measure[0]); // Convert to Date object
+				const utcTime = new Date(time.getTime() + 15 * 60000); // Add 15 minutes
+
+				return {
+					id: $dataStore.data.xfmr_sid,
+					measure: measure[1].toFixed(3),
+					load_percentage: (measure[1] / $dataStore.data.max).toFixed(3) * 100,
+					time: time,
+					interval: utcTime // New property with time 15 minutes later
+				};
+			});
+		};
+
+		const normalMeasures = mapMeasures($dataStore.data.measures);
+
+		// Normal usage
+		normalMeasures.forEach((measure) => {
+			normalUsageWorksheet.addRow({
+				id: measure.id,
+				measure: measure.measure,
+				load_percentage: measure.load_percentage,
+				time: new Date(measure.time), // Convert to Date object
+				interval: new Date(measure.interval) // Convert to Date object
+			});
+		});
+
+		// EV Usage
+		// Process and append data for EV Usage (if exists)
+		if ($dataStore.data.driver_measures && $dataStore.data.driver_measures.length > 0) {
+			const evUsageWorksheet = workbook.addWorksheet(`${$dataStore.data.evs} EVs Usage`);
+			evUsageWorksheet.columns = [...normalUsageWorksheet.columns]; // Copy columns from the normal usage sheet
+
+			const evMeasures = mapMeasures($dataStore.data.driver_measures);
+
+			evMeasures.forEach((measure) => {
+				evUsageWorksheet.addRow({
+					id: measure.id,
+
+					measure: measure.measure,
+					load_percentage: measure.load_percentage,
+					time: new Date(measure.time), // Convert to Date object
+					interval: new Date(measure.interval) // Convert to Date object
+				});
+			});
+		}
+
+
+		// await workbook.xlsx.writeFile(filename + '.xlsx');
+		workbook.xlsx.writeBuffer().then((data) => {
+			const blob = new Blob([data], {
+				type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet;charset=UTF-8'
+			});
+			const url = window.URL.createObjectURL(blob);
+			const a = document.createElement('a');
+			a.href = url;
+			a.download = `XFMR_Utilization_Report-${$dataStore.data.xfmr_sid}-${$dataStore.data.year}-EVs_${$dataStore.data.evs}-NormalUsage.xlsx`;
+			a.click();
+		});
+	}
 </script>
 
 <div class="bg-epbthird h-14 relative">
@@ -400,22 +561,61 @@
 	<div class="right-column custom-scroll bg-epbsecond">
 		{#if $histogram.data.buckets && $histogram.data.buckets.length > 0}
 			<div in:fade={{ duration: 300 }}>
-				<h1 class="text-xl font-bold mb-6 ml-4 text-epb mt-6">PEAK LOAD DISTRIBUTION</h1>
+				<form>
+					<div class="flex flex-row">
+						<h1 class="text-xl font-bold mb-6 ml-4 text-epb mt-6">PEAK LOAD DISTRIBUTION</h1>
+						<Button
+							class="bg-epb hover:bg-epbhover self-center ml-auto"
+							on:click={() => exportToXLSXHistogram()}>Export to XLSX</Button
+						>
+					</div>
+				</form>
 				<h1 class="text-MD font-bold ml-4 mb-6 text-epbtext tracking-widest">
 					ALL {$histogram.data.kva_rating}.0 KVA RATED TRANSFORMERS
 				</h1>
 				<div class="flex flex-row ml-4 mb-4">
-					<p class="text-epbtext text-md tracking-widest uppercase"><span class="text-epb">MONTH</span> OF {$histogram.data.month} {$histogram.data.year}</p>
-					<p class="text-epbtext ml-2 text-md tracking-widest"><span class="text-epb">HOURS</span> OF {$histogram.data.time_interval_string}</p>
+					<p class="text-epbtext text-md tracking-widest uppercase">
+						<span class="text-epb">MONTH</span> OF {$histogram.data.month}
+						{$histogram.data.year}
+					</p>
+					<p class="text-epbtext ml-2 text-md tracking-widest">
+						<span class="text-epb">HOURS</span> OF {$histogram.data.time_interval_string}
+					</p>
 				</div>
 				<Chart
 					options={options_histogram}
 					series={series_data_histogram}
 					bind:chartInstance={chartRef}
 				/>
+				<Tabs.Root value="normal">
+					<Tabs.List>
+						<Tabs.Trigger value="normal">Normal Usage</Tabs.Trigger>
+						<Tabs.Trigger value="ev">EV Usage</Tabs.Trigger>
+					</Tabs.List>
+					<Tabs.Content value="normal">
+						<div class="p-4 rounded">
+							<p class="text-base font-semibold mb-2">Total Available kW</p>
+							<p>
+								{Number($histogram.data.total_available_kw).toLocaleString()}
+								<span class="text-epb font-semibold">kW</span>
+							</p>
+						</div>
+					</Tabs.Content>
+					<Tabs.Content value="ev">
+						<div class="p-4 rounded">
+							<p class="text-base font-semibold mb-2">Total Available kW</p>
+							<p>
+								{Number($histogram.data.total_available_kw_ev).toLocaleString()}
+								<span class="text-epb font-semibold">kW</span>
+							</p>
+						</div>
+					</Tabs.Content>
+				</Tabs.Root>
 				{#if selectedBucket && selectedBucket.transformers && selectedBucket.transformers.length > 0}
 					<div class="mt-6 ml-4">
-						<h2 class="text-lg font-bold mb-4 text-epb">Transformers for {selected_load_category} load utilization</h2>
+						<h2 class="text-lg font-bold mb-4 text-epb">
+							Transformers for {selected_load_category} load utilization
+						</h2>
 						<table class="min-w-full border-collapse">
 							<thead>
 								<tr>
@@ -428,7 +628,9 @@
 								{#each selectedBucket.transformers as transformer}
 									<tr>
 										<td class="px-4 py-2 border border-gray-200">{transformer.id}</td>
-										<td class="px-4 py-2 border border-gray-200">{transformer.measure}</td>
+										<td class="px-4 py-2 border border-gray-200"
+											>{transformer.measure}</td
+										>
 										<!-- Add more cells if your transformer data has more fields -->
 									</tr>
 								{/each}
@@ -439,43 +641,23 @@
 			</div>
 		{/if}
 		<!-- Check if dataStore.data is available -->
-		{#if $dataStore.data && $dataStore.data.measures && $dataStore.data.driver_measures}
+		{#if $dataStore.data && $dataStore.data.measures.length > 0 && $dataStore.data.driver_measures.length > 0}
 			<div in:fade={{ duration: 300 }}>
 				<!-- Display the transformer SID -->
 				<div class="flex flex-row mb-6 mt-6">
-					<h1 class="text-xl font-bold ml-4 text-epb">TRANSFORMER REPORT</h1>
+					<h1 class="text-xl font-bold ml-4 text-epb self-center">
+						{$dataStore.data.year} TRANSFORMER REPORT
+					</h1>
 					<h1 class="text-black font-medium ml-4 self-center">SID: {$dataStore.data.xfmr_sid}</h1>
+					<Button
+						class="bg-epb hover:bg-epbhover self-center ml-auto"
+						on:click={() => exportToXLSXRiskReport('exported-load-report')}>Export to XLSX</Button
+					>
 				</div>
 				<h1 class="text-md font-semibold ml-4 mb-6 text-epbtext tracking-widest">
 					{$dataStore.data.max}.0 KVA RATED TRANSFORMER
 				</h1>
 
-				<!-- Controls for zooming the chart -->
-				<div class="chart-controls p-4 flex items-center justify-between mb-4">
-					<div class="flex items-center space-x-4">
-						<label for="startDate" class="text-sm font-semibold">Start Date:</label>
-						<input
-							id="startDate"
-							type="date"
-							bind:value={startDate}
-							min={'1970-1-1'}
-							class="flex h-10 w-full rounded-md border border-input border-inputborder bg-transparent px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:border-epb disabled:cursor-not-allowed disabled:opacity-50"
-						/>
-					</div>
-
-					<div class="flex items-center space-x-4">
-						<label for="endDate" class="text-sm font-semibold">End Date:</label>
-						<input
-							id="endDate"
-							type="date"
-							bind:value={endDate}
-							min={'1970-1-1'}
-							class="flex h-10 w-full rounded-md border border-input border-inputborder bg-transparent px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:border-epb disabled:cursor-not-allowed disabled:opacity-50"
-						/>
-					</div>
-
-					<Button class="bg-epb" on:click={applyZoom}>Apply Zoom</Button>
-				</div>
 				<Chart {options} series={series_data} bind:chartInstance={myChartRef} />
 				<Tabs.Root value="normal">
 					<Tabs.List>
