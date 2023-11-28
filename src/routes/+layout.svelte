@@ -197,6 +197,7 @@
 						console.log(event);
 						console.log(chartContext);
 						console.log(config);
+						console.log($histogram.data.buckets[0])
 						if (config.seriesIndex === 0) {
 							selectedBucket = $histogram.data.buckets[config.dataPointIndex];
 							selected_load_category = load_categories[config.dataPointIndex];

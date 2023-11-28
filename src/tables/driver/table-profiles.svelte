@@ -60,7 +60,7 @@
 			<li>
 				<span class="font-semibold">Interval:</span> The time interval of the profile. This is an
 				<span class="font-semibold">identifier</span> which can be used to cross-reference the corresponding
-				record in the time profiles page. An interval must be created <span class="text-epb"><a href="/times">here</a></span> before creating a driver profile.
+				record in the time profiles page. 
 			</li>
 		</ul>
 	</div>

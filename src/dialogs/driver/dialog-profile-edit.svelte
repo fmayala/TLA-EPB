@@ -184,7 +184,7 @@
 						isOpen = false;
 					}}>Cancel</Button
 				>
-				<Button class="w-full bg-epb hover:bg-epbhover">Add</Button>
+				<Button class="w-full bg-epb hover:bg-epbhover">Update</Button>
 			</div>
 		</form>
 		<!-- </Form> -->

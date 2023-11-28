@@ -164,9 +164,15 @@ export const actions: Actions = {
 
 		// Bucket logic now uses peakMeasures
 		const bucketCounts = Array.from({ length: 19 }, () => ({ value: 0, transformers: [] }));
+		console.log(bucketCounts);
 		peakMeasures.forEach((peakMeasure) => {
 			const percentage = (peakMeasure.KVAMEASURE / kva_rating) * 100;
 			const bucket = getBucket(percentage);
+
+			if (bucket < 0 || bucket > 18) {
+				console.log(bucket);
+			}
+
 			bucketCounts[bucket].value += 1;
 
 			// Check if the transformer ID is already in the bucket
@@ -197,22 +203,22 @@ export const actions: Actions = {
 				const percentage = (adjustedPeakMeasure / kva_rating) * 100;
 				const bucket = getBucket(percentage);
 
-				bucketCountsEvLoad[bucket].value += 1;
+				// bucketCountsEvLoad[bucket].value += 1;
 
-				// Check if the transformer ID is already in the bucket for EV load
-				const transformerExists = bucketCountsEvLoad[bucket].transformers.some(
-					(transformer) => transformer.id === measure.XFMR_SID
-				);
+				// // Check if the transformer ID is already in the bucket for EV load
+				// const transformerExists = bucketCountsEvLoad[bucket].transformers.some(
+				// 	(transformer) => transformer.id === measure.XFMR_SID
+				// );
 
-				if (!transformerExists) {
-					bucketCountsEvLoad[bucket].transformers.push({
-						id: measure.XFMR_SID,
-						measure: adjustedPeakMeasure.toFixed(3),
-						load_percentage: percentage.toFixed(3),
-						bucket: bucket,
-						time: measure.MEASURE_DATE
-					});
-				}
+				// if (!transformerExists) {
+				// 	bucketCountsEvLoad[bucket].transformers.push({
+				// 		id: measure.XFMR_SID,
+				// 		measure: adjustedPeakMeasure.toFixed(3),
+				// 		load_percentage: percentage.toFixed(3),
+				// 		bucket: bucket,
+				// 		time: measure.MEASURE_DATE
+				// 	});
+				// }
 			});
 
 			return bucketCountsEvLoad;
@@ -221,21 +227,22 @@ export const actions: Actions = {
 		// Assuming you have validated evload and it is the maximum EV load
 		const peakMeasuresEvLoad = createBucketCountsBasedOnEvLoad(peakMeasures);
 
-
 		// Get total available KW, but first convert KVA measure back to KW, and also subtract it from the KVA rating
 		const total_available_kw = peakMeasures.reduce((acc, curr) => {
-			const kw = curr.KVAMEASURE * 0.9;
-			return acc + (kva_rating - kw);
+			const kva_used = kva_rating - curr.KVAMEASURE; // 37 - 30 = 7 kVA
+			const kw = kva_used * 0.9; // 7 * 0.9 = 6.3 kW
+			return acc + kw;
 		}, 0);
 
 		// Get total available KW for EV load
 		const total_available_kw_ev = peakMeasures.reduce((acc, curr) => {
 			const extraLoad = (7.5 / 0.9) * evload;
 			const adjustedPeakMeasure = curr.KVAMEASURE + extraLoad;
-			const kw = adjustedPeakMeasure * 0.9;
-			return acc + (kva_rating - kw);
-		}, 0);
+			const kva_used = kva_rating - adjustedPeakMeasure;
 
+			const kw = kva_used * 0.9;
+			return acc + kw;
+		}, 0);
 
 		// Convert the 24-hour format to 12-hour format for both start and end times
 		const time_interval_string = `${convertTo12HourFormat(from)} - ${convertTo12HourFormat(to)}`;
@@ -251,7 +258,7 @@ export const actions: Actions = {
 				time_interval_string: time_interval_string,
 				kva_rating,
 				total_available_kw: total_available_kw,
-				total_available_kw_ev: total_available_kw_ev,
+				total_available_kw_ev: total_available_kw_ev
 			}
 		};
 	}

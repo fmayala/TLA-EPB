@@ -1,3 +1,5 @@
+import db from "./db";
+
 export type Measure = {
 	ID: number;
 	MEASURE_DATE: Date;
@@ -26,121 +28,147 @@ export enum TimeInterval {
 	EVENING = 3 // 6pm - 12am
 }
 
-export function convertNormalToEvUsage(
-	measures: Measure[],
-	ev_count: number,
-	driver_profiles: DriverProfile[],
-	profileCounts: {}
+export async function convertNormalToEvUsage(
+    measures: Measure[],
+    ev_count: number,
+    driver_profiles: DriverProfile[],
+    profileCounts: any
 ): Promise<Measure[]> {
-	return new Promise((resolve, reject) => {
-		if (ev_count === 0) {
-			resolve([]);
-			return;
-		}
+    if (ev_count === 0) {
+        return [];
+    }
 
-		// Initialize the resulting array with the original measures
-		let new_usage_measures: Measure[] = [...measures];
+    // Initialize the resulting array with the original measures
+    let new_usage_measures: Measure[] = [...measures];
 
-		driver_profiles.forEach((driver_profile) => {
-			const evsForProfile = profileCounts[driver_profile.ID] || 0;
-			if (evsForProfile === 0) return;
+    for (const driver_profile of driver_profiles) {
+        const evsForProfile = profileCounts[driver_profile.ID] || 0;
+        if (evsForProfile === 0) continue;
 
-			// Calculate total kWh consumed
-			const total_kwh = driver_profile.MILES_DRIVEN * driver_profile.KWH_EXPENDITURE;
+        // Calculate total kWh consumed
+        const total_kwh = driver_profile.MILES_DRIVEN * driver_profile.KWH_EXPENDITURE;
 
-			// Calculate charging time (in hours)
-			const charging_time = total_kwh / 7.5;
+        // Calculate charging time (in hours)
+        const charging_time = total_kwh / 7.5;
 
-			// Calculate intervals we need in 15-minute increments
-			const intervals = Math.ceil(charging_time * 4);
+        // Calculate intervals we need in 15-minute increments
+        const intervals = Math.ceil(charging_time * 4);
 
-			// Define time range for each interval
-			const startHour = driver_profile.TIME_INTERVAL * 6;
-			const endHour = startHour + 6;
+        const time_profile = await db.xfmrTimeInterval.findUnique({
+            where: {
+                ID: driver_profile.TIME_INTERVAL
+            }
+        });
 
-			new_usage_measures = new_usage_measures.map((measure) => {
-				const measureHour = new Date(measure.UTC_TIME).getUTCHours();
+        // Parse the start time
+        const startTime = new Date(time_profile.Start);
+        const startHour = startTime.getUTCHours();
+        const startMinute = startTime.getUTCMinutes();
 
-				// Check if the measure is within the specified time range
-				if (measureHour >= startHour && measureHour < endHour) {
-					// Check if we are within the number of intervals to modify
-					const withinIntervals =
-						(measureHour * 4 + Math.floor(new Date(measure.UTC_TIME).getUTCMinutes() / 15)) % 24 <
-						intervals;
-					if (withinIntervals) {
-						const added_kVA = (7.5 / 0.9) * evsForProfile; // additional kVA for each EV, considering power factor of 0.9
-						const new_KVA = (Number(measure.KVA_MEASURE) || 0) + added_kVA;
+        // Convert start hour and minute to a decimal value
+        const startDecimal = startHour + startMinute / 60;
 
-						return { ...measure, KVA_MEASURE: new_KVA, KW_MEASURE: new_KVA * 0.9 };
-					}
-				}
+        // Assuming the duration is 6 hours as per your existing logic
+        const duration = 6;
+        const endDecimal = startDecimal + duration;
 
-				// If the measure is not modified, return the original measure
-				return measure;
-			});
-		});
+        new_usage_measures = new_usage_measures.map((measure) => {
+            const measureHour = new Date(measure.UTC_TIME).getUTCHours();
+            const measureMinute = new Date(measure.UTC_TIME).getUTCMinutes();
+            const measureDecimal = measureHour + measureMinute / 60;
 
-		resolve(new_usage_measures);
-	});
+            // Check if the measure is within the specified time range
+            if (measureDecimal >= startDecimal && measureDecimal < endDecimal) {
+                // Check if we are within the number of intervals to modify
+                const withinIntervals =
+                    (Math.floor(measureDecimal * 4)) % 24 < intervals;
+                if (withinIntervals) {
+                    const added_kVA = (7.5 / 0.9) * evsForProfile; // additional kVA for each EV, considering power factor of 0.9
+                    const new_KVA = (Number(measure.KVA_MEASURE) || 0) + added_kVA;
+
+                    return { ...measure, KVA_MEASURE: new_KVA, KW_MEASURE: new_KVA * 0.9 };
+                }
+            }
+
+            // If the measure is not modified, return the original measure
+            return measure;
+        });
+    }
+
+    return new_usage_measures;
 }
 
-export function ev_usage_measures(
-  measures: Measure[],
-  ev_count: number,
-  driver_profiles: DriverProfile[],
-  profileCounts: {}
+export async function ev_usage_measures(
+    measures: Measure[],
+    ev_count: number,
+    driver_profiles: DriverProfile[],
+    profileCounts: any,
 ): Promise<[number, number][]> {
-  return new Promise((resolve, reject) => {
-      if (ev_count === 0) {
-          resolve([]);
-          return;
-      }
+    if (ev_count === 0) {
+        return [];
+    }
 
-      // Initialize the resulting array with the original measures
-      let new_usage_measures: [number, number][] = measures.map(measure => {
-          const time = new Date(measure.UTC_TIME).getTime();
-          return [time, measure.KVA_MEASURE || 0];
-      });
+    // Initialize the resulting array with the original measures
+    let new_usage_measures: [number, number][] = measures.map(measure => {
+        const time = new Date(measure.UTC_TIME).getTime();
+        return [time, measure.KVA_MEASURE || 0];
+    });
 
-      driver_profiles.forEach(driver_profile => {
-          const evsForProfile = profileCounts[driver_profile.ID] || 0;
-          if (evsForProfile === 0) return;
+    for (const driver_profile of driver_profiles) {
+        const evsForProfile = profileCounts[driver_profile.ID] || 0;
+        if (evsForProfile === 0) continue;
 
-          // Calculate total kWh consumed
-          const total_kwh = driver_profile.MILES_DRIVEN * driver_profile.KWH_EXPENDITURE;
+        // Calculate total kWh consumed
+        const total_kwh = driver_profile.MILES_DRIVEN * driver_profile.KWH_EXPENDITURE;
 
-          // Calculate charging time (in hours)
-          const charging_time = total_kwh / 7.5;
+        // Calculate charging time (in hours)
+        const charging_time = total_kwh / 7.5;
 
-          // Calculate intervals we need in 15-minute increments
-          const intervals = Math.ceil(charging_time * 4);
+        // Calculate intervals we need in 15-minute increments
+        const intervals = Math.ceil(charging_time * 4);
 
-          // Define time range for each interval
-          const startHour = driver_profile.TIME_INTERVAL * 6;
-          const endHour = startHour + 6;
+        const time_profile = await db.xfmrTimeInterval.findUnique({
+            where: {
+                ID: driver_profile.TIME_INTERVAL
+            }
+        });
 
-          new_usage_measures = new_usage_measures.map(([time, kVA]) => {
-              const measureHour = new Date(time).getUTCHours();
+        // Parse the start time
+        const startTime = new Date(time_profile.Start);
+        const startHour = startTime.getUTCHours();
+        const startMinute = startTime.getUTCMinutes();
 
-              // Check if the measure is within the specified time range
-              if (measureHour >= startHour && measureHour < endHour) {
-                  // Check if we are within the number of intervals to modify
-                  const withinIntervals = (measureHour * 4 + Math.floor(new Date(time).getUTCMinutes() / 15)) % 24 < intervals;
-                  if (withinIntervals) {
-                      const added_kVA = (7.5 / 0.9) * evsForProfile; // additional kVA for each EV, considering power factor of 0.9
-                      const new_KVA = kVA + added_kVA;
+        // Convert start hour and minute to a decimal value
+        const startDecimal = startHour + startMinute / 60;
 
-                      return [time, new_KVA];
-                  }
-              }
+        // Assuming the duration is 6 hours as per your existing logic
+        const duration = 6;
+        const endDecimal = startDecimal + duration;
 
-              // If the measure is not modified, return the original measure
-              return [time, kVA];
-          });
-      });
+        new_usage_measures = new_usage_measures.map(([time, kVA]) => {
+            const measureTime = new Date(time);
+            const measureHour = measureTime.getUTCHours();
+            const measureMinute = measureTime.getUTCMinutes();
+            const measureDecimal = measureHour + measureMinute / 60;
 
-      resolve(new_usage_measures);
-  });
+            // Check if the measure is within the specified time range
+            if (measureDecimal >= startDecimal && measureDecimal < endDecimal) {
+                // Check if we are within the number of intervals to modify
+                const withinIntervals = (Math.floor(measureDecimal * 4)) % 24 < intervals;
+                if (withinIntervals) {
+                    const added_kVA = (7.5 / 0.9) * evsForProfile; // additional kVA for each EV, considering power factor of 0.9
+                    const new_KVA = kVA + added_kVA;
+
+                    return [time, new_KVA];
+                }
+            }
+
+            // If the measure is not modified, return the original measure
+            return [time, kVA];
+        });
+    }
+
+    return new_usage_measures;
 }
 
 export function overloaded_time(measures: Measure[], KVA_RATING: number): Promise<string> {

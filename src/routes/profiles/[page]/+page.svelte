@@ -51,15 +51,23 @@
 </head>
 
 <div class="pt-6">
-	<div class="flex flex-row mb-12">
-		<h1 class="ml-1 self-center text-xl font-semibold mr-auto">Driver Profiles</h1>
-		<DialogProfileCreate />
-	</div>
-	<TableProfiles
-		data={tableData}
-		hasNextPage={hasNextPage}
-		hasPreviousPage={hasPreviousPage}
-	/>
+    <div class="flex flex-row mb-12">
+        <h1 class="ml-1 self-center text-xl font-semibold mr-auto">Driver Profiles</h1>
+        <DialogProfileCreate />
+    </div>
+
+    <!-- Notice for creating a time profile -->
+    <div class="bg-blue-100 border-l-4 border-blue-500 text-blue-700 p-4 mb-6" role="alert">
+        <p class="font-bold">Notice</p>
+        <p>You must first create a Time Profile first before creating a new Driver Profile.</p>
+    </div>
+
+    <TableProfiles
+        data={tableData}
+        hasNextPage={hasNextPage}
+        hasPreviousPage={hasPreviousPage}
+    />
 </div>
+
 
 <!-- form={data.form} -->

@@ -1,29 +1,17 @@
-export function getBucket(percentage: number) {
-	const buckets = [
-		0,
-		10,
-		20,
-		30,
-		40,
-		50,
-		60,
-		70,
-		80,
-		90,
-		100,
-		110,
-		120,
-		130,
-		140,
-		150,
-		175,
-		200,
-		Infinity
-	];
-	for (let i = 1; i < buckets.length; i++) {
-		if (percentage < buckets[i]) {
-			return i - 1;
-		}
+export function getBucket(percentage) {
+    if (percentage >= 200) {
+        return 18; // 200%+ goes to the last bucket
+    }
+    if (percentage === 0) {
+        return 0; // 0% goes to the first bucket
+    }
+
+	const bucket = Math.floor(percentage / 10);
+
+	if (bucket > 18) {
+		return 18;
 	}
-	return buckets.length - 1;
+
+	// Other percentages are divided into 10% ranges, make sure its an integer
+    return bucket;
 }
