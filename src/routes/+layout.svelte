@@ -194,10 +194,6 @@
 				...options_histogram.chart,
 				events: {
 					dataPointSelection(event, chartContext, config) {
-						console.log(event);
-						console.log(chartContext);
-						console.log(config);
-						console.log($histogram.data.buckets[0])
 						if (config.seriesIndex === 0) {
 							selectedBucket = $histogram.data.buckets[config.dataPointIndex];
 							selected_load_category = load_categories[config.dataPointIndex];
@@ -622,6 +618,7 @@
 								<tr>
 									<th class="px-4 py-2 border border-gray-200 bg-gray-100">Transformer ID</th>
 									<th class="px-4 py-2 border border-gray-200 bg-gray-100">KVA Measure</th>
+									<th class="px-4 py-2 border border-gray-200 bg-gray-100">Load Percentage</th>
 									<!-- Add more headers if your transformer data has more fields -->
 								</tr>
 							</thead>
@@ -632,7 +629,9 @@
 										<td class="px-4 py-2 border border-gray-200"
 											>{transformer.measure}</td
 										>
-										<!-- Add more cells if your transformer data has more fields -->
+										<td class="px-4 py-2 border border-gray-200"
+											>{transformer.load_percentage}</td
+										>
 									</tr>
 								{/each}
 							</tbody>

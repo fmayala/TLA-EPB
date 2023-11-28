@@ -167,11 +167,11 @@ export const actions: Actions = {
 		console.log(bucketCounts);
 		peakMeasures.forEach((peakMeasure) => {
 			const percentage = (peakMeasure.KVAMEASURE / kva_rating) * 100;
-			const bucket = getBucket(percentage);
+	
+			// convert percentage to integer
+			const percentageInt = Math.floor(percentage);
 
-			if (bucket < 0 || bucket > 18) {
-				console.log(bucket);
-			}
+			const bucket = getBucket(percentageInt);
 
 			bucketCounts[bucket].value += 1;
 
@@ -201,24 +201,28 @@ export const actions: Actions = {
 				// Adjust the peak measure by adding the extra load
 				const adjustedPeakMeasure = measure.KVAMEASURE + extraLoad;
 				const percentage = (adjustedPeakMeasure / kva_rating) * 100;
-				const bucket = getBucket(percentage);
 
-				// bucketCountsEvLoad[bucket].value += 1;
+				// convert percentage to integer
+				const percentageInt = Math.floor(percentage);
 
-				// // Check if the transformer ID is already in the bucket for EV load
-				// const transformerExists = bucketCountsEvLoad[bucket].transformers.some(
-				// 	(transformer) => transformer.id === measure.XFMR_SID
-				// );
+				const bucket = getBucket(percentageInt);
 
-				// if (!transformerExists) {
-				// 	bucketCountsEvLoad[bucket].transformers.push({
-				// 		id: measure.XFMR_SID,
-				// 		measure: adjustedPeakMeasure.toFixed(3),
-				// 		load_percentage: percentage.toFixed(3),
-				// 		bucket: bucket,
-				// 		time: measure.MEASURE_DATE
-				// 	});
-				// }
+				bucketCountsEvLoad[bucket].value += 1;
+
+				// Check if the transformer ID is already in the bucket for EV load
+				const transformerExists = bucketCountsEvLoad[bucket].transformers.some(
+					(transformer) => transformer.id === measure.XFMR_SID
+				);
+
+				if (!transformerExists) {
+					bucketCountsEvLoad[bucket].transformers.push({
+						id: measure.XFMR_SID,
+						measure: adjustedPeakMeasure.toFixed(3),
+						load_percentage: percentage.toFixed(3),
+						bucket: bucket,
+						time: measure.MEASURE_DATE
+					});
+				}
 			});
 
 			return bucketCountsEvLoad;
